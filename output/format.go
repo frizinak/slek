@@ -70,7 +70,7 @@ func (t *format) Msg(
 		prefix := ""
 		if section || t.lastPrefix == nil || t.lastPrefix.channel != channel {
 			prefix = fmt.Sprintf(
-				"\n%s %-79s%s",
+				"\n%s %-34s%s",
 				colorBgGreen,
 				channel,
 				colorReset,
@@ -78,7 +78,7 @@ func (t *format) Msg(
 		}
 
 		prefix += fmt.Sprintf(
-			"\n%s %-30s %s %s",
+			"\n%s %-18s %s %s",
 			colorUser,
 			fmt.Sprintf("%s:", from),
 			colorReset,
@@ -87,7 +87,7 @@ func (t *format) Msg(
 
 		t.lastPrefix = &msgPrefix{channel, from, ts}
 		return fmt.Sprintf(
-			"%-80s\n%s",
+			"%s\n%s",
 			prefix,
 			msg,
 		)
