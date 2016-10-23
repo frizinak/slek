@@ -293,8 +293,23 @@ func (s *Slk) Run() error {
 	for e := range s.r.IncomingEvents {
 		switch d := e.Data.(type) {
 		case *slack.PresenceChangeEvent:
-			// TODO
-			s.out.Debug(d.Presence, s.getUser(d.User).Name)
+			s.getUser(d.User).Presence = d.Presence
+			// TODO notice or something
+
+		case *slack.ChannelJoinedEvent:
+			channel := s.getChannel(d.Channel.ID)
+			channel.isMember = true
+		case *slack.ChannelLeftEvent:
+			channel := s.getChannel(d.Channel)
+			channel.isMember = false
+
+		case *slack.GroupJoinedEvent:
+			channel := s.getChannel(d.Channel.ID)
+			channel.isMember = true
+		case *slack.GroupLeftEvent:
+			channel := s.getChannel(d.Channel)
+			channel.isMember = false
+
 		case *slack.UserTypingEvent:
 			// TODO
 			s.out.Debug(fmt.Sprintf("%+v", d))
