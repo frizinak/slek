@@ -50,6 +50,11 @@ func (s *Slk) history(
 		}
 	}
 
+	// Slack be weird, history of an IM has not hist.Latest value.
+	if hist.Latest == "" && hist.HasMore {
+		return
+	}
+
 	histLatest, _ := strconv.ParseFloat(hist.Latest, 64)
 	if latest == hist.Latest || l >= histLatest {
 		latest = ""

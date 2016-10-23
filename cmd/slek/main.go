@@ -255,6 +255,10 @@ func (s *slek) run() error {
 			s.c.Unread(e)
 		}
 
+		for _, e := range s.c.IMs() {
+			s.c.Unread(e)
+		}
+
 		slkErr <- s.c.Run()
 	}()
 

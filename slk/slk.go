@@ -107,6 +107,18 @@ func (s *Slk) Joined() []Entity {
 	return joined
 }
 
+func (s *Slk) IMs() []Entity {
+	users := make([]Entity, 0)
+	for i := range s.users {
+		im := s.getIMByUser(s.users[i].GetID())
+		if im != nilIM {
+			users = append(users, s.users[i])
+		}
+	}
+
+	return users
+}
+
 func (s *Slk) Post(e Entity, msg string) error {
 	if err := s.post(e, msg); err != nil {
 		s.out.Warn(err.Error())
@@ -122,8 +134,8 @@ func (s *Slk) Mark(e Entity) error {
 	switch e.GetType() {
 	case TypeChannel:
 		s.c.SetChannelReadMark(e.GetID(), e.getLatest())
-	// TODO
-	//case TypeUser:
+	case TypeUser:
+		s.c.MarkIMChannel(s.getIMByUser(e.GetID()).ID, e.getLatest())
 	default:
 		err = fmt.Errorf("Can't mark a %s", e.GetType())
 	}
@@ -140,13 +152,16 @@ func (s *Slk) Unread(e Entity) error {
 	latest := e.getLatest()
 	fLast, _ := strconv.ParseFloat(last, 64)
 	fLatest, _ := strconv.ParseFloat(latest, 64)
-	if last == "" || fLatest == 0.0 || last == latest || fLast > fLatest {
+	if last == "" ||
+		fLatest == 0.0 ||
+		fLast == 0.0 ||
+		last == latest ||
+		fLast > fLatest {
 		return nil
 	}
 
 	p := slack.NewHistoryParameters()
 	p.Oldest = last
-	p.Count = 1
 
 	var err error
 	first := true
