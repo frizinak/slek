@@ -270,7 +270,7 @@ func (s *Slk) Quit() {
 	s.r.Disconnect()
 	// TODO we might still receive events on s.r.IncomingEvents
 	// which in turn might make s.out.* calls
-	// close(s.r.IncomingEvents)
+	close(s.r.IncomingEvents)
 }
 
 func (s *Slk) Run() error {

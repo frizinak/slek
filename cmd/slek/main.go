@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/frizinak/slek/cmd/config"
@@ -23,14 +24,18 @@ var (
 	stderr = log.New(os.Stderr, "", 0)
 	help   = []slk.ListItems{
 		{
-			{slk.ListItemStatusNone, "@user    msg    :  im user"},
-			{slk.ListItemStatusNone, "#channel msg    :  post channel message"},
-			{slk.ListItemStatusNone, "#group   msg    :  post group message"},
+			{slk.ListItemStatusNone, "quit             : quit slek"},
+			{slk.ListItemStatusNone, "exit             : quit slek"},
 		},
 		{
-			{slk.ListItemStatusNone, "@user    /h (n) :  get history (n items)"},
-			{slk.ListItemStatusNone, "#channel /h (n) :  get history (n items)"},
-			{slk.ListItemStatusNone, "#group   /h (n) :  get history (n items)"},
+			{slk.ListItemStatusNone, "@user    msg     :  im user"},
+			{slk.ListItemStatusNone, "#channel msg     :  post channel message"},
+			{slk.ListItemStatusNone, "#group   msg     :  post group message"},
+		},
+		{
+			{slk.ListItemStatusNone, "@user    /h (n)  :  get history (n items)"},
+			{slk.ListItemStatusNone, "#channel /h (n)  :  get history (n items)"},
+			{slk.ListItemStatusNone, "#group   /h (n)  :  get history (n items)"},
 		},
 		{
 			{slk.ListItemStatusNone, "users | u        :  list active users"},
@@ -54,6 +59,7 @@ type slek struct {
 	t         *output.Term
 	input     chan string
 	editorCmd string
+	quit      chan bool
 }
 
 func newSlek(username, token, editorCmd string) *slek {
@@ -63,7 +69,8 @@ func newSlek(username, token, editorCmd string) *slek {
 		token,
 		t,
 	)
-	return &slek{c, t, input, strings.TrimSpace(editorCmd)}
+
+	return &slek{c, t, input, strings.TrimSpace(editorCmd), make(chan bool)}
 }
 
 func (s *slek) fuzzy(
@@ -127,10 +134,13 @@ func (s *slek) normalCommand(cmd string, args []string) bool {
 	switch cmd {
 	case "?", "h", "help", "/help":
 		s.t.Notice("HELP")
-		helps := []string{"Messages", "History", "Listings"}
+		helps := []string{"General", "Messages", "History", "Listings"}
 		for i, title := range helps {
 			s.t.List(title, help[i])
 		}
+	case "quit", "exit":
+		s.quit <- true
+		return true
 	case "channels", "c":
 		s.c.List(slk.TypeChannel, true)
 		return true
@@ -245,6 +255,9 @@ func (s *slek) run() error {
 	}()
 
 	slkErr := make(chan error, 0)
+
+	var init sync.Mutex
+	init.Lock()
 	go func() {
 		if err := s.c.Init(); err != nil {
 			slkErr <- err
@@ -259,6 +272,7 @@ func (s *slek) run() error {
 			s.c.Unread(e)
 		}
 
+		init.Unlock()
 		slkErr <- s.c.Run()
 	}()
 
@@ -303,6 +317,11 @@ func (s *slek) run() error {
 		}
 	}()
 
+	// We can't exit before starting slack.
+	s.t.Notice("Fetching metadata")
+	init.Lock()
+	s.t.Info("Fetched metadata")
+
 	for {
 		select {
 		case err := <-slkErr:
@@ -312,6 +331,8 @@ func (s *slek) run() error {
 		case err := <-termErr:
 			s.c.Quit()
 			return err
+		case <-s.quit:
+			s.t.Quit()
 		}
 	}
 

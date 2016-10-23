@@ -139,12 +139,11 @@ func (t *Term) Init() (err error) {
 	}
 
 	clear := func(g *gocui.Gui, v *gocui.View) error {
-		v, _ = g.View("input")
 		t.SetInput("", -1, false)
 		return nil
 	}
 
-	err = t.g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit)
+	err = t.g.SetKeybinding("", gocui.KeyCtrlQ, gocui.ModNone, quit)
 	if err != nil {
 		return
 	}
@@ -159,7 +158,7 @@ func (t *Term) Init() (err error) {
 		return
 	}
 
-	err = t.g.SetKeybinding("input", gocui.KeyEnter, gocui.ModAlt, clear)
+	err = t.g.SetKeybinding("input", gocui.KeyCtrlC, gocui.ModNone, clear)
 	if err != nil {
 		return
 	}
@@ -248,7 +247,6 @@ func (t *Term) Init() (err error) {
 }
 
 func (t *Term) Run() error {
-	//defer t.Quit()
 	defer close(t.input)
 	defer t.g.Close()
 	defer close(t.gQueue)
@@ -264,9 +262,6 @@ func (t *Term) Run() error {
 }
 
 func (t *Term) Quit() {
-	//close(t.gQueue)
-	//t.g.Close()
-	//close(t.input)
 	t.gQueue <- func(g *gocui.Gui) error {
 		return gocui.ErrQuit
 	}
