@@ -16,8 +16,12 @@ func (s *Slk) leave(e Entity) error {
 		return fmt.Errorf("Can not leave a %s", e.GetType())
 	}
 
-	_, err := s.c.LeaveChannel(e.GetID())
-	return err
+	if e.(*channel).isChannel {
+		_, err := s.c.LeaveChannel(e.GetID())
+		return err
+	}
+
+	return s.c.LeaveGroup(e.GetID())
 }
 
 func (s *Slk) invite(chn, user Entity) error {
