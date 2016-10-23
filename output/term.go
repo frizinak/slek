@@ -176,10 +176,10 @@ func (t *Term) Init() (err error) {
 			// so screw it.
 			return intent
 
-			// :( not access to the lines slice (viewLines)
+			// :( no access to the lines slice (viewLines)
 			lines := len(strings.Split(v.ViewBuffer(), "\n")) - 1
-			// Wait wut. ViewBuffer doesn't return the amount of lines
-			// currently visible?? what am I missing here.
+			// Wait wut. ViewBuffer doesn't return the lines
+			// currently visible?? what am I missing here?
 			if intent > lines {
 				return lines
 			}
@@ -393,7 +393,7 @@ func (t *Term) layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
 	maxX--
 
-	boxW := int(2 * float64(maxX) / 3) //int(math.Min(180, 0.8*float64(maxX)))
+	boxW := int(2 * float64(maxX) / 3)
 	if v, err := g.SetView("box", 0, 0, boxW, maxY-5); err != nil {
 		v.Frame = false
 		v.Autoscroll = true
@@ -403,7 +403,6 @@ func (t *Term) layout(g *gocui.Gui) error {
 		}
 	}
 
-	//if v, err := g.SetView("info", 0, maxY-9, maxX, maxY-5); err != nil {
 	if v, err := g.SetView("info", boxW+2, 0, maxX, maxY-5); err != nil {
 		v.Frame = false
 		v.Autoscroll = true

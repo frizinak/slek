@@ -50,7 +50,7 @@ func (s *Slk) history(
 		}
 	}
 
-	// Slack be weird, history of an IM has not hist.Latest value.
+	// Slack be weird, history of an IM has no hist.Latest value.
 	if hist.Latest == "" && hist.HasMore {
 		return
 	}

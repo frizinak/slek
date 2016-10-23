@@ -36,8 +36,6 @@ func ts(ts string) (t time.Time) {
 }
 
 func (s *Slk) parseText(texts ...string) (parsed string, mentions []string) {
-	//mentions = make([]string, 0)
-
 	clean := make([]string, 0, len(texts))
 	for i := range texts {
 
