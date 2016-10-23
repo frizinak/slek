@@ -1,0 +1,20 @@
+[ ] h:     maintain Latest and LastRead between channel, group and im updates
+[ ] m:     mark last received message in channels and ims (queued)
+[-] m:     vim navigation in box (hikl / ud)
+[-] l:     vim mode in input / editor command
+[x] m:     generic commands
+[x] m-5:   list channels
+[x] m-5:   list users
+[x] h:     move username and token to config
+[ ] l-8:   restart repo and move to github
+[x] l:     #/@ /hist amount argument
+[ ] l:     im notifications
+[x] l:     ratelimit notifications
+[ ] h:     fix editor: crashes hard on multiple newlines (paste)
+[ ] h:     fix editor: arrow down / right should not 'create' newlines
+[ ] l:     send messages using the rtm api (keep webapi post as fallback?)
+[ ] l:     typing box + timeout
+[ ] l:     update users / channels status on rtm events instead of webapi every n seconds
+[ ] l:     godoc
+[ ] l:     logo / notification logo
+[ ] l:     configurable notifications (only mentions and ims / all joined channel messages / take slack preferences into account)

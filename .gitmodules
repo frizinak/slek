@@ -1,0 +1,21 @@
+[submodule "vendor/github.com/nlopes/slack"]
+	path = vendor/github.com/nlopes/slack
+	url = https://github.com/nlopes/slack
+[submodule "vendor/github.com/jroimartin/gocui"]
+	path = vendor/github.com/jroimartin/gocui
+	url = https://github.com/jroimartin/gocui
+[submodule "vendor/github.com/renstrom/fuzzysearch"]
+	path = vendor/github.com/renstrom/fuzzysearch
+	url = https://github.com/renstrom/fuzzysearch
+[submodule "vendor/github.com/0xAX/notificator"]
+	path = vendor/github.com/0xAX/notificator
+	url = https://github.com/0xAX/notificator
+[submodule "vendor/github.com/nsf/termbox-go"]
+	path = vendor/github.com/nsf/termbox-go
+	url = https://github.com/nsf/termbox-go
+[submodule "vendor/github.com/mattn/go-runewidth"]
+	path = vendor/github.com/mattn/go-runewidth
+	url = https://github.com/mattn/go-runewidth
+[submodule "vendor/golang.org/x/net"]
+	path = vendor/golang.org/x/net
+	url = https://go.googlesource.com/net
