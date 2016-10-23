@@ -412,6 +412,7 @@ func (t *Term) layout(g *gocui.Gui) error {
 	if v, err := g.SetView("info", boxW+2, 0, maxX, maxY-5); err != nil {
 		v.Frame = false
 		v.Autoscroll = true
+		v.Wrap = true
 		if err != gocui.ErrUnknownView {
 			return err
 		}
