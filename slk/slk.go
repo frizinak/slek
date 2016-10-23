@@ -416,12 +416,14 @@ func (s *Slk) msg(m *slack.Message, newSection bool, notify bool) {
 			s.parseAttachments(m.Attachments)...)...,
 	)
 
-	if im {
-		s.out.Notify(name, username, text, false)
-	} else if notify {
-		for i := range mentions {
-			if mentions[i] == s.username {
-				s.out.Notify(name, username, text, false)
+	if notify {
+		if im {
+			s.out.Notify(name, username, text, false)
+		} else {
+			for i := range mentions {
+				if mentions[i] == s.username {
+					s.out.Notify(name, username, text, false)
+				}
 			}
 		}
 	}
