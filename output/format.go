@@ -114,7 +114,7 @@ func (t *format) File(channel, from, title, url string) string {
 
 func (t *format) Typing(channel, user string) string {
 	return fmt.Sprintf(
-		"%-12s %s is typing...%s",
+		"%s %s is typing...%s",
 		fmt.Sprintf("[%s]", channel),
 		user,
 		colorReset,

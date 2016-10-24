@@ -45,7 +45,7 @@ func (s *Stdout) File(channel, from, title, url string) {
 	std.Println(s.format.File(channel, from, title, url))
 }
 
-func (s *Stdout) Typing(channel, user string) {
+func (s *Stdout) Typing(channel, user string, timeout time.Duration) {
 	std.Println(s.format.Typing(channel, user))
 }
 

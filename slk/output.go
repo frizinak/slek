@@ -54,7 +54,7 @@ type Output interface {
 	Warn(msg string)
 	Msg(channel, from, msg string, ts time.Time, newSection bool)
 	Debug(msg ...string)
-	Typing(channel, user string)
+	Typing(channel, user string, timeout time.Duration)
 	File(channel, from, title, url string)
 	List(title string, items []*ListItem)
 }

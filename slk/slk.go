@@ -311,8 +311,6 @@ func (s *Slk) Run() error {
 			channel.isMember = false
 
 		case *slack.UserTypingEvent:
-			// TODO
-			s.out.Debug(fmt.Sprintf("%+v", d))
 			channel := s.getChannel(d.Channel)
 			channelName := channel.GetName()
 			if channel == nilChan {
@@ -323,7 +321,11 @@ func (s *Slk) Run() error {
 				}
 			}
 
-			s.out.Typing(channelName, s.getUser(d.User).GetName())
+			s.out.Typing(
+				channelName,
+				s.getUser(d.User).GetName(),
+				time.Second*3,
+			)
 		case *slack.MessageEvent:
 			m := slack.Message(*d)
 			s.msg(&m, false, true)

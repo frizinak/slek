@@ -27,6 +27,9 @@ type Term struct {
 	notifier          *notificator.Notificator
 	notifyChan        chan *notification
 	notificationLimit time.Duration
+
+	clearEventMutex sync.Mutex
+	clearEventBox   *time.Time
 }
 
 func NewTerm(
@@ -253,6 +256,28 @@ func (t *Term) Run() error {
 
 	go t.update()
 
+	go func() {
+		for {
+			t.clearEventMutex.Lock()
+			now := time.Now()
+			clear := t.clearEventBox != nil && t.clearEventBox.Before(now)
+			if !clear {
+				t.clearEventMutex.Unlock()
+				time.Sleep(time.Millisecond * 200)
+				continue
+			}
+
+			t.clearEventBox = nil
+			t.clearEventMutex.Unlock()
+
+			t.gQueue <- func(g *gocui.Gui) error {
+				v, _ := g.View("event")
+				v.Clear()
+				return nil
+			}
+		}
+	}()
+
 	if err := t.g.MainLoop(); err != nil && err != gocui.ErrQuit {
 		return err
 	}
@@ -307,6 +332,24 @@ func (t *Term) infoText(msg string) {
 	t.text("info", msg)
 }
 
+func (t *Term) eventText(msg string, timeout time.Duration) {
+	at := time.Now().Add(timeout)
+	t.clearEventMutex.Lock()
+	defer t.clearEventMutex.Unlock()
+	if t.clearEventBox == nil || t.clearEventBox.Before(at) {
+		t.clearEventBox = &at
+	}
+
+	t.gQueue <- func(g *gocui.Gui) error {
+		v, _ := g.View("event")
+		v.Clear()
+		if v != nil {
+			fmt.Fprint(v, msg)
+		}
+		return nil
+	}
+}
+
 func (s *Term) Notify(channel, from, text string, force bool) {
 	if !force {
 		s.notifyChan <- &notification{channel, from, text}
@@ -352,8 +395,8 @@ func (t *Term) File(channel, from, title, url string) {
 	t.boxText(t.format.File(channel, from, title, url))
 }
 
-func (t *Term) Typing(channel, user string) {
-	t.infoText(t.format.Typing(channel, user))
+func (t *Term) Typing(channel, user string, timeout time.Duration) {
+	t.eventText(t.format.Typing(channel, user), timeout)
 }
 
 func (t *Term) Debug(msg ...string) {
@@ -394,35 +437,47 @@ func (t *Term) layout(g *gocui.Gui) error {
 	maxX--
 
 	boxW := int(2 * float64(maxX) / 3)
-	if v, err := g.SetView("box", 0, 0, boxW, maxY-5); err != nil {
-		v.Frame = false
-		v.Autoscroll = true
-		v.Wrap = true
+	if v, err := g.SetView("box", 0, 0, boxW, maxY-6); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
-	}
 
-	if v, err := g.SetView("info", boxW+2, 0, maxX, maxY-5); err != nil {
 		v.Frame = false
 		v.Autoscroll = true
 		v.Wrap = true
+	}
+
+	if v, err := g.SetView("info", boxW+2, 0, maxX, maxY-6); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
+
+		v.Frame = false
+		v.Autoscroll = true
+		v.Wrap = true
 	}
 
-	if v, err := g.SetView("input", 2, maxY-5, maxX-1, maxY-1); err != nil {
-		v.Frame = true
-		v.Editable = true
-		v.Wrap = true
-
+	if v, err := g.SetView("input", 2, maxY-6, maxX-1, maxY-3); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
 		if _, err := g.SetCurrentView("input"); err != nil {
 			return err
 		}
+
+		v.Frame = true
+		v.Editable = true
+		v.Wrap = true
+	}
+
+	if v, err := g.SetView("event", 2, maxY-3, maxX-1, maxY); err != nil {
+		if err != gocui.ErrUnknownView {
+			return err
+		}
+
+		v.Frame = false
+		v.Wrap = false
+		v.Autoscroll = true
 	}
 
 	return nil
