@@ -14,7 +14,7 @@
 [ ] h:     fix editor: crashes hard on multiple newlines (paste)
 [ ] h:     fix editor: arrow down / right should not 'create' newlines
 [ ] l:     send messages using the rtm api (keep webapi post as fallback?)
-[ ] l:     user-is-typing box (or generic feedback box, repurposing info for users and channel listings) + timeout
+[x] l:     user-is-typing box (or generic feedback box, repurposing info for users and channel listings) + timeout
 [x] l:     update users / channels status on rtm events instead of webapi every n seconds
 [ ] l:     godoc
 [ ] l:     logo / notification logo
