@@ -329,21 +329,10 @@ func (s *Slk) Run() error {
 			s.msg(&m, false, true)
 
 		case *slack.ReactionAddedEvent:
-			s.out.Msg(
-				s.getChannel(d.Item.Channel).GetName(),
-				s.getUser(d.User).Name,
-				fmt.Sprintf("[+] %s", d.Reaction),
-				ts(d.Item.Timestamp),
-				false,
-			)
+			s.reaction(d)
+
 		case *slack.ReactionRemovedEvent:
-			s.out.Msg(
-				s.getChannel(d.Item.Channel).GetName(),
-				s.getUser(d.User).Name,
-				fmt.Sprintf("[-] %s", d.Reaction),
-				ts(d.Item.Timestamp),
-				false,
-			)
+			s.reaction(d)
 
 		case *slack.FileSharedEvent:
 			// TODO ignorable? slack.MessageEvent seems to suffice
@@ -402,6 +391,56 @@ func (s *Slk) Run() error {
 	return nil
 }
 
+func (s *Slk) reaction(r interface{}) {
+	var userID string
+	var channelID string
+	var sign string
+	var item string
+	var timestamp string
+
+	switch reaction := r.(type) {
+	case *slack.ReactionAddedEvent:
+		sign = "[+]"
+		userID = reaction.User
+		channelID = reaction.Item.Channel
+		item = reaction.Reaction
+		timestamp = reaction.Item.Timestamp
+	case *slack.ReactionRemovedEvent:
+		sign = "[-]"
+		userID = reaction.User
+		channelID = reaction.Item.Channel
+		item = reaction.Reaction
+		timestamp = reaction.Item.Timestamp
+	default:
+		s.out.Warn("Not a reaction event")
+		return
+	}
+
+	var entity Entity
+	channel := s.getChannel(channelID)
+	entity = channel
+
+	if channel == nilChan || !channel.isMember {
+		entity = s.getUser(s.getIM(channelID).User)
+		if entity == nilUser {
+			return
+		}
+	}
+
+	s.msg(
+		&slack.Message{
+			Msg: slack.Msg{
+				Channel:   channelID,
+				User:      userID,
+				Text:      fmt.Sprintf("%s %s", sign, item),
+				Timestamp: timestamp,
+			},
+		},
+		false,
+		entity.GetType() == TypeUser,
+	)
+}
+
 func (s *Slk) msg(m *slack.Message, newSection bool, notify bool) {
 	if m.Hidden {
 		// TODO we sure 'bout that?
@@ -412,13 +451,15 @@ func (s *Slk) msg(m *slack.Message, newSection bool, notify bool) {
 		m.Msg = *m.SubMessage
 	}
 
+	var entity Entity
 	ch := s.getChannel(m.Channel)
-	name := "#" + ch.GetName()
+	entity = ch
+
 	im := false
 	if ch == nilChan {
 		user := s.getUser(s.getIM(m.Channel).User)
 		im = user != nilUser
-		name = "@" + user.GetName()
+		entity = user
 	}
 
 	username := s.getUser(m.User).Name
@@ -433,18 +474,23 @@ func (s *Slk) msg(m *slack.Message, newSection bool, notify bool) {
 
 	if notify {
 		if im {
-			s.out.Notify(name, username, text, false)
+			s.out.Notify(entity.GetQualifiedName(), username, text, false)
 		} else {
 			for i := range mentions {
 				if mentions[i] == s.username {
-					s.out.Notify(name, username, text, false)
+					s.out.Notify(
+						entity.GetQualifiedName(),
+						username,
+						text,
+						false,
+					)
 				}
 			}
 		}
 	}
 
 	s.out.Msg(
-		name,
+		entity.GetQualifiedName(),
 		username,
 		text,
 		ts(m.Timestamp),

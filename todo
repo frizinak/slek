@@ -25,3 +25,8 @@
 [ ] l:     document editorCmd
 [ ] l:     document usage
 [ ] l:     makefile cross compile (gox)
+[x] m:     ignore events for channels where isMember == false (slack appears to send reaction events for channels we're not a member of)
+[ ] l:     :smile: unicode chars (configurable)
+[ ] l:     support mpim/mpdm or at the very least be able to leave them (legacy slack feature?)
+[ ] m:     # / @ entity history (up / down key?)
+[ ] m:     start editor with <C-e>
