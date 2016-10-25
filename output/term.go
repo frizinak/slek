@@ -143,7 +143,7 @@ func (t *Term) Init() (err error) {
 	}
 
 	clear := func(g *gocui.Gui, v *gocui.View) error {
-		t.SetInput("", -1, false)
+		t.SetInput("", -1, -1, false)
 		return nil
 	}
 
@@ -244,7 +244,6 @@ func (t *Term) Init() (err error) {
 		if err != nil {
 			return err
 		}
-
 	}
 
 	return
@@ -290,64 +289,6 @@ func (t *Term) Run() error {
 func (t *Term) Quit() {
 	t.gQueue <- func(g *gocui.Gui) error {
 		return gocui.ErrQuit
-	}
-}
-
-func (t *Term) submit(g *gocui.Gui) {
-	v, _ := g.View("input")
-	t.SetInput("", -1, false)
-	t.input <- v.Buffer()
-}
-
-func (t *Term) text(which, msg string) {
-	t.gQueue <- func(g *gocui.Gui) error {
-		v, _ := g.View(which)
-		if v != nil {
-			fmt.Fprint(v, msg+"\n")
-		}
-		return nil
-	}
-}
-
-func (t *Term) update() {
-	// TODO batch process items, with a timeout of 30 fps or sumn?
-	var wg sync.WaitGroup
-	for task := range t.gQueue {
-		wg.Add(1)
-		t.g.Execute(
-			func(g *gocui.Gui) error {
-				defer wg.Done()
-				return task(g)
-			},
-		)
-
-		wg.Wait()
-	}
-}
-
-func (t *Term) boxText(msg string) {
-	t.text("box", msg)
-}
-
-func (t *Term) infoText(msg string) {
-	t.text("info", msg)
-}
-
-func (t *Term) eventText(msg string, timeout time.Duration) {
-	at := time.Now().Add(timeout)
-	t.clearEventMutex.Lock()
-	defer t.clearEventMutex.Unlock()
-	if t.clearEventBox == nil || t.clearEventBox.Before(at) {
-		t.clearEventBox = &at
-	}
-
-	t.gQueue <- func(g *gocui.Gui) error {
-		v, _ := g.View("event")
-		v.Clear()
-		if v != nil {
-			fmt.Fprint(v, msg)
-		}
-		return nil
 	}
 }
 
@@ -408,7 +349,12 @@ func (t *Term) List(title string, items []*slk.ListItem) {
 	t.infoText(t.format.List(title, items))
 }
 
-func (t *Term) SetInput(str string, posX int, submit bool) {
+func (t *Term) GetInput() string {
+	v, _ := t.g.View("input")
+	return v.Buffer()
+}
+
+func (t *Term) SetInput(str string, posX int, posY int, submit bool) {
 	t.g.Execute(
 		func(g *gocui.Gui) error {
 			v, _ := g.View("input")
@@ -418,11 +364,23 @@ func (t *Term) SetInput(str string, posX int, submit bool) {
 
 			v.Clear()
 			fmt.Fprint(v, str)
-			if posX < 0 {
-				posX = runewidth.StringWidth(str)
+
+			parts := strings.Split(str, "\n")
+			var line string
+			if posY < 0 {
+				posY = len(parts) - 1
 			}
+
+			if posY < len(parts) {
+				line = parts[posY]
+			}
+
+			if posX < 0 {
+				posX = runewidth.StringWidth(line)
+			}
+
+			v.SetOrigin(0, posY)
 			v.SetCursor(posX, 0)
-			v.SetOrigin(0, 0)
 			if submit {
 				t.submit(t.g)
 			}
@@ -430,6 +388,64 @@ func (t *Term) SetInput(str string, posX int, submit bool) {
 			return nil
 		},
 	)
+}
+
+func (t *Term) submit(g *gocui.Gui) {
+	v, _ := g.View("input")
+	t.SetInput("", -1, -1, false)
+	t.input <- v.Buffer()
+}
+
+func (t *Term) text(which, msg string) {
+	t.gQueue <- func(g *gocui.Gui) error {
+		v, _ := g.View(which)
+		if v != nil {
+			fmt.Fprint(v, msg+"\n")
+		}
+		return nil
+	}
+}
+
+func (t *Term) update() {
+	// TODO batch process items, with a timeout of 30 fps or sumn?
+	var wg sync.WaitGroup
+	for task := range t.gQueue {
+		wg.Add(1)
+		t.g.Execute(
+			func(g *gocui.Gui) error {
+				defer wg.Done()
+				return task(g)
+			},
+		)
+
+		wg.Wait()
+	}
+}
+
+func (t *Term) boxText(msg string) {
+	t.text("box", msg)
+}
+
+func (t *Term) infoText(msg string) {
+	t.text("info", msg)
+}
+
+func (t *Term) eventText(msg string, timeout time.Duration) {
+	at := time.Now().Add(timeout)
+	t.clearEventMutex.Lock()
+	defer t.clearEventMutex.Unlock()
+	if t.clearEventBox == nil || t.clearEventBox.Before(at) {
+		t.clearEventBox = &at
+	}
+
+	t.gQueue <- func(g *gocui.Gui) error {
+		v, _ := g.View("event")
+		v.Clear()
+		if v != nil {
+			fmt.Fprint(v, msg)
+		}
+		return nil
+	}
 }
 
 func (t *Term) layout(g *gocui.Gui) error {

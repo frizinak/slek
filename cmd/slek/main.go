@@ -89,7 +89,7 @@ func (s *slek) fuzzy(
 
 	if len(opts) == 1 {
 		// autocomplete and bail
-		s.t.SetInput(fmt.Sprintf("%s%s ", prefix, opts[0].GetName()), -1, false)
+		s.t.SetInput(fmt.Sprintf("%s%s ", prefix, opts[0].GetName()), -1, -1, false)
 		return opts[0]
 	}
 
@@ -98,6 +98,7 @@ func (s *slek) fuzzy(
 		if query == opts[i].GetName() {
 			s.t.SetInput(
 				fmt.Sprintf("%s%s ", prefix, opts[0].GetName()),
+				-1,
 				-1,
 				false,
 			)
@@ -123,6 +124,7 @@ func (s *slek) fuzzy(
 		s.t.SetInput(
 			fmt.Sprintf("%s %s", trgt, trimFields(args)),
 			runewidth.StringWidth(trgt),
+			0,
 			false,
 		)
 	}
@@ -241,7 +243,7 @@ func (s *slek) editor(prefix string) {
 		return
 	}
 
-	s.t.SetInput(string(data), -1, true)
+	s.t.SetInput(string(data), -1, -1, true)
 }
 
 func (s *slek) run() error {
@@ -305,6 +307,7 @@ func (s *slek) run() error {
 
 			s.t.SetInput(
 				fmt.Sprintf("%s%s ", string(cmd[0]), e.GetName()),
+				-1,
 				-1,
 				false,
 			)
