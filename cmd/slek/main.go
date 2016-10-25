@@ -18,6 +18,7 @@ import (
 	"github.com/frizinak/slek/cmd/config"
 	"github.com/frizinak/slek/output"
 	"github.com/frizinak/slek/slk"
+	runewidth "github.com/mattn/go-runewidth"
 )
 
 var (
@@ -121,8 +122,7 @@ func (s *slek) fuzzy(
 		trgt := fmt.Sprintf("%s%s", prefix, opts[0].GetName())
 		s.t.SetInput(
 			fmt.Sprintf("%s %s", trgt, trimFields(args)),
-			// TODO counting bytes bruh, @see term.go todo
-			len(trgt),
+			runewidth.StringWidth(trgt),
 			false,
 		)
 	}

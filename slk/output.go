@@ -3,6 +3,7 @@ package slk
 import (
 	"time"
 	"unicode"
+	"unicode/utf8"
 )
 
 const (
@@ -28,15 +29,16 @@ func (a ListItems) Less(i, j int) bool {
 		return a[i].Status < a[j].Status
 	}
 
-	// TODO multibyte
 	if len(a[i].Value) != 0 && len(a[j].Value) != 0 {
-		return byteToLower(a[i].Value[0]) < byteToLower(a[j].Value[0])
+		ib, _ := utf8.DecodeRune([]byte(a[i].Value))
+		jb, _ := utf8.DecodeRune([]byte(a[j].Value))
+		return runeToLower(ib) < runeToLower(jb)
 	}
 
 	return false
 }
 
-func byteToLower(r byte) byte {
+func runeToLower(r rune) rune {
 	if r <= unicode.MaxASCII {
 		if 'A' <= r && r <= 'Z' {
 			r += 'a' - 'A'

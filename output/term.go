@@ -9,6 +9,7 @@ import (
 	"github.com/0xAX/notificator"
 	"github.com/frizinak/slek/slk"
 	"github.com/jroimartin/gocui"
+	runewidth "github.com/mattn/go-runewidth"
 )
 
 type notification struct {
@@ -417,9 +418,8 @@ func (t *Term) SetInput(str string, posX int, submit bool) {
 
 			v.Clear()
 			fmt.Fprint(v, str)
-			// TODO, fix this shit, currently counting bytes...
 			if posX < 0 {
-				posX = len(str)
+				posX = runewidth.StringWidth(str)
 			}
 			v.SetCursor(posX, 0)
 			v.SetOrigin(0, 0)
