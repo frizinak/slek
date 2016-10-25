@@ -12,7 +12,7 @@
 [x] l:     fix 11, don't receive notifications for own ims xD
 [x] l:     ratelimit notifications
 [ ] h:     fix editor: crashes hard on multiple newlines (paste)
-[ ] h:     fix editor: arrow down / right should not 'create' newlines
+[-] h:     fix editor: arrow down / right should not 'create' newlines (right arrow fixed, newlines: alt+enter?)
 [ ] l:     send messages using the rtm api (keep webapi post as fallback?)
 [x] l:     user-is-typing box (or generic feedback box, repurposing info for users and channel listings) + timeout
 [x] l:     update users / channels status on rtm events instead of webapi every n seconds
@@ -29,7 +29,7 @@
 [ ] l:     :smile: unicode chars (configurable)
 [ ] l:     support mpim/mpdm or at the very least be able to leave them (legacy slack feature?)
 [ ] m:     # / @ entity history (up / down key?)
-[ ] m:     start editor with <C-e>
+[x] m:     start editor with <C-e>
 [ ] l:     implement notifications
 [ ] h:     setUserAsActive on interval or own presence event?
 [ ] l:     turn ":)" and the likes into ":smile:"

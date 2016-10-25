@@ -18,6 +18,7 @@ import (
 	"github.com/frizinak/slek/cmd/config"
 	"github.com/frizinak/slek/output"
 	"github.com/frizinak/slek/slk"
+	"github.com/jroimartin/gocui"
 	runewidth "github.com/mattn/go-runewidth"
 )
 
@@ -282,6 +283,11 @@ func (s *slek) run() error {
 		'@': slk.TypeUser,
 		'#': slk.TypeChannel,
 	}
+
+	s.t.BindKey(gocui.KeyCtrlE, func() error {
+		s.editor(s.t.GetInput())
+		return nil
+	})
 
 	go func() {
 		for i := range s.input {

@@ -55,10 +55,13 @@ func NewTerm(
 
 func (t *Term) Init() (err error) {
 	t.g = gocui.NewGui()
-	t.g.Cursor = true
+
 	if err = t.g.Init(); err != nil {
 		return
 	}
+
+	t.g.Editor = gocui.EditorFunc(editor)
+	t.g.Cursor = true
 
 	defer func() {
 		if err != nil {
@@ -247,6 +250,14 @@ func (t *Term) Init() (err error) {
 	}
 
 	return
+}
+
+func (t *Term) BindKey(key gocui.Key, handler func() error) error {
+	h := func(g *gocui.Gui, v *gocui.View) error {
+		return handler()
+	}
+
+	return t.g.SetKeybinding("input", key, gocui.ModNone, h)
 }
 
 func (t *Term) Run() error {
@@ -497,4 +508,57 @@ func (t *Term) layout(g *gocui.Gui) error {
 	}
 
 	return nil
+}
+
+func editor(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
+	switch {
+	case ch != 0 && mod == 0:
+		v.EditWrite(ch)
+	case key == gocui.KeySpace:
+		v.EditWrite(' ')
+	case key == gocui.KeyBackspace || key == gocui.KeyBackspace2:
+		v.EditDelete(true)
+	case key == gocui.KeyDelete:
+		v.EditDelete(false)
+	case key == gocui.KeyInsert:
+		v.Overwrite = !v.Overwrite
+	case key == gocui.KeyEnter:
+		v.EditNewLine()
+	case key == gocui.KeyArrowDown:
+		move(v, 0, 1)
+	case key == gocui.KeyArrowUp:
+		move(v, 0, -1)
+	case key == gocui.KeyArrowLeft:
+		move(v, -1, 0)
+	case key == gocui.KeyArrowRight:
+		move(v, 1, 0)
+	}
+}
+
+func move(v *gocui.View, dx, dy int) {
+	orx, ory := v.Origin()
+	ox, oy := v.Cursor()
+	ox += orx
+	oy += ory
+
+	x := ox + dx
+	y := oy + dy
+
+	if x < 0 {
+		x = 0
+	}
+	if y < 0 {
+		y = 0
+	}
+
+	line, _ := v.Line(y)
+	cols := runewidth.StringWidth(line)
+	if x > cols {
+		x = cols
+		if dy == 0 {
+			return
+		}
+	}
+
+	v.MoveCursor(x-ox, y-oy, true)
 }
