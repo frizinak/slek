@@ -476,7 +476,9 @@ func (s *Slk) msg(m *slack.Message, newSection bool, notify bool) {
 
 	if notify {
 		if im {
-			s.out.Notify(entity.GetQualifiedName(), username, text, false)
+			if username != s.username {
+				s.out.Notify(entity.GetQualifiedName(), username, text, false)
+			}
 		} else {
 			for i := range mentions {
 				if mentions[i] == s.username {

@@ -9,7 +9,7 @@
 [x] l-8:   restart repo and move to github
 [x] l:     #/@ /hist amount argument
 [x] l:     im notifications
-[ ] l:     fix 11, don't receive notifications for own ims xD
+[x] l:     fix 11, don't receive notifications for own ims xD
 [x] l:     ratelimit notifications
 [ ] h:     fix editor: crashes hard on multiple newlines (paste)
 [ ] h:     fix editor: arrow down / right should not 'create' newlines
@@ -24,9 +24,12 @@
 [ ] h:     fileupload
 [ ] l:     document editorCmd
 [ ] l:     document usage
-[ ] l:     makefile cross compile (gox)
+[-] l:     makefile cross compile (gox)
 [x] m:     ignore events for channels where isMember == false (slack appears to send reaction events for channels we're not a member of)
 [ ] l:     :smile: unicode chars (configurable)
 [ ] l:     support mpim/mpdm or at the very least be able to leave them (legacy slack feature?)
 [ ] m:     # / @ entity history (up / down key?)
 [ ] m:     start editor with <C-e>
+[ ] l:     implement notifications
+[ ] h:     setUserAsActive on interval or own presence event?
+[ ] l:     turn ":)" and the likes into ":smile:"
