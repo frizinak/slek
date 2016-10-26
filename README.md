@@ -29,3 +29,4 @@ GPL-3.0
 [nsf/termbox-go](https://github.com/nsf/termbox-go)  
 [renstrom/fuzzysearch](https://github.com/renstrom/fuzzysearch)  
 
+suet, mokit & freddi for running an untrusted binary on their macs.
