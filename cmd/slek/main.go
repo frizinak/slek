@@ -178,6 +178,12 @@ func (s *slek) entityCommand(e slk.Entity, args []string) bool {
 
 		s.c.History(e, n)
 		return true
+	case "/u", "/users":
+		s.c.Members(e, true)
+		return true
+	case "/au", "/all-users":
+		s.c.Members(e, false)
+		return true
 	case "/join":
 		s.c.Join(e)
 		return true

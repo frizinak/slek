@@ -268,7 +268,39 @@ func (s *Slk) List(eType EntityType, relevantOnly bool) error {
 		return nil
 	}
 
-	return fmt.Errorf("Can not list items of type '%s'", eType)
+	return fmt.Errorf("Can not list items of type %s", eType)
+}
+
+func (s *Slk) Members(e Entity, relevanOnly bool) error {
+	channel, ok := e.(*channel)
+	if !ok {
+		err := fmt.Errorf("Can't list members of a %s", e.GetType())
+		s.out.Warn(err.Error())
+		return err
+	}
+
+	items := make(ListItems, 0, len(channel.members))
+	for i := range channel.members {
+		user := s.getUser(channel.members[i])
+		status := ListItemStatusGood
+		if !user.IsActive() {
+			if relevanOnly {
+				continue
+			}
+
+			status = ListItemStatusNormal
+		}
+
+		items = append(items, &ListItem{status, user.GetName()})
+	}
+
+	sort.Sort(items)
+	s.out.List(
+		fmt.Sprintf("Users in %s", channel.GetQualifiedName()),
+		items,
+	)
+
+	return nil
 }
 
 func (s *Slk) Quit() {
