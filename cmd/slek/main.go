@@ -19,7 +19,7 @@ import (
 	"github.com/frizinak/slek/output"
 	"github.com/frizinak/slek/slk"
 	"github.com/jroimartin/gocui"
-	runewidth "github.com/mattn/go-runewidth"
+	"github.com/mattn/go-runewidth"
 )
 
 var (
@@ -30,20 +30,18 @@ var (
 			{slk.ListItemStatusNone, "exit             : quit slek"},
 		},
 		{
-			{slk.ListItemStatusNone, "@user    msg     :  im user"},
-			{slk.ListItemStatusNone, "#channel msg     :  post channel message"},
-			{slk.ListItemStatusNone, "#group   msg     :  post group message"},
+			{slk.ListItemStatusNone, "#room <msg>: send <msg>"},
 		},
 		{
-			{slk.ListItemStatusNone, "@user    /h (n)  :  get history (n items)"},
-			{slk.ListItemStatusNone, "#channel /h (n)  :  get history (n items)"},
-			{slk.ListItemStatusNone, "#group   /h (n)  :  get history (n items)"},
+			{slk.ListItemStatusNone, "#room /h <n>          : get history (<n> items)"},
+			{slk.ListItemStatusNone, "#room /u | /users:    : list online users in #room"},
+			{slk.ListItemStatusNone, "#room /au | /all-users: list all users in #room"},
 		},
 		{
-			{slk.ListItemStatusNone, "users | u        :  list active users"},
-			{slk.ListItemStatusNone, "all-users | au   :  list all users"},
-			{slk.ListItemStatusNone, "channels | c     :  list joined channels"},
-			{slk.ListItemStatusNone, "all-channels | ac:  list all channels"},
+			{slk.ListItemStatusNone, "users | u        : list online users"},
+			{slk.ListItemStatusNone, "all-users | au   : list all users"},
+			{slk.ListItemStatusNone, "channels | c     : list joined channels"},
+			{slk.ListItemStatusNone, "all-channels | ac: list all channels"},
 		},
 	}
 )
@@ -64,8 +62,8 @@ type slek struct {
 	quit      chan bool
 }
 
-func newSlek(username, token, editorCmd string) *slek {
-	t, input := output.NewTerm("slk", username, time.Second*5)
+func newSlek(username, token, editorCmd string, ntfy time.Duration) *slek {
+	t, input := output.NewTerm("slk", username, time.Second*5, ntfy)
 	c := slk.NewSlk(
 		username,
 		token,
@@ -136,8 +134,8 @@ func (s *slek) fuzzy(
 func (s *slek) normalCommand(cmd string, args []string) bool {
 	switch cmd {
 	case "?", "h", "help", "/help":
-		s.t.Notice("HELP")
-		helps := []string{"General", "Messages", "History", "Listings"}
+		s.t.Notice("HELP (#room = @user #group or #channel)")
+		helps := []string{"General", "Messages", "Rooms", "Listings"}
 		for i, title := range helps {
 			s.t.List(title, help[i])
 		}
@@ -372,7 +370,12 @@ func main() {
 		stderr.Fatal(err)
 	}
 
-	err = newSlek(conf.Username, conf.Token, conf.EditorCmd).run()
+	if conf.NotificationTimeout == 0 {
+		conf.NotificationTimeout = 2500
+	}
+
+	ntfy := time.Duration(conf.NotificationTimeout * 1e6)
+	err = newSlek(conf.Username, conf.Token, conf.EditorCmd, ntfy).run()
 	if err != nil {
 		stderr.Fatal(err)
 	}

@@ -30,9 +30,9 @@
 [ ] l:     support mpim/mpdm or at the very least be able to leave them (legacy slack feature?)
 [ ] m:     # / @ entity history (up / down key?)
 [x] m:     start editor with <C-e>
-[ ] l:     implement notifications
+[-] l:     implement notifications (frizinak/gnotifier wip)
 [ ] h:     setUserAsActive on interval or own presence event?
 [ ] l:     turn ":)" and the likes into ":smile:"
-[ ] h:     #/@ /users /all-users /u /au
-[ ] h-36:  help
+[x] h:     #/@ /users /all-users /u /au
+[x] h-36:  help
 [ ] h-36:  update channel.members

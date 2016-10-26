@@ -6,10 +6,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/0xAX/notificator"
+	"github.com/frizinak/gnotifier"
 	"github.com/frizinak/slek/slk"
 	"github.com/jroimartin/gocui"
-	runewidth "github.com/mattn/go-runewidth"
+	"github.com/mattn/go-runewidth"
 )
 
 type notification struct {
@@ -24,10 +24,10 @@ type Term struct {
 	// none of the update events are guaranteed to
 	// be excuted in order.
 	// Use a synchronization channel
-	gQueue            chan gocui.Handler
-	notifier          *notificator.Notificator
-	notifyChan        chan *notification
-	notificationLimit time.Duration
+	gQueue              chan gocui.Handler
+	notifyChan          chan *notification
+	notificationLimit   time.Duration
+	notificationTimeout time.Duration
 
 	clearEventMutex sync.Mutex
 	clearEventBox   *time.Time
@@ -37,17 +37,18 @@ func NewTerm(
 	appName,
 	username string,
 	notificationLimit time.Duration,
+	notificationTimeout time.Duration,
 ) (t *Term, input chan string) {
 	input = make(chan string, 1)
 	queue := make(chan gocui.Handler, 0)
 
 	t = &Term{
-		format:            format{ownUsername: username},
-		input:             input,
-		gQueue:            queue,
-		notifier:          notificator.New(notificator.Options{AppName: appName}),
-		notifyChan:        make(chan *notification, 1),
-		notificationLimit: notificationLimit,
+		format:              format{ownUsername: username},
+		input:               input,
+		gQueue:              queue,
+		notifyChan:          make(chan *notification, 1),
+		notificationLimit:   notificationLimit,
+		notificationTimeout: notificationTimeout,
 	}
 
 	return
@@ -303,9 +304,9 @@ func (t *Term) Quit() {
 	}
 }
 
-func (s *Term) Notify(channel, from, text string, force bool) {
+func (t *Term) Notify(channel, from, text string, force bool) {
 	if !force {
-		s.notifyChan <- &notification{channel, from, text}
+		t.notifyChan <- &notification{channel, from, text}
 		return
 	}
 
@@ -325,7 +326,17 @@ func (s *Term) Notify(channel, from, text string, force bool) {
 		}
 	}
 
-	s.notifier.Push(title, strings.Join(f, " "), "", notificator.UR_NORMAL)
+	msg := strings.Join(f, " ")
+	if err := gnotifier.Notify(title, msg, t.notificationTimeout); err != nil {
+		t.Warn("Failed to trigger notification")
+		t.Notice(
+			fmt.Sprintf(
+				"Notification:\n%s\n%s",
+				title,
+				msg,
+			),
+		)
+	}
 }
 
 func (t *Term) Info(msg string) {

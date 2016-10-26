@@ -7,9 +7,6 @@
 [submodule "vendor/github.com/renstrom/fuzzysearch"]
 	path = vendor/github.com/renstrom/fuzzysearch
 	url = https://github.com/renstrom/fuzzysearch
-[submodule "vendor/github.com/0xAX/notificator"]
-	path = vendor/github.com/0xAX/notificator
-	url = https://github.com/0xAX/notificator
 [submodule "vendor/github.com/nsf/termbox-go"]
 	path = vendor/github.com/nsf/termbox-go
 	url = https://github.com/nsf/termbox-go
@@ -19,3 +16,6 @@
 [submodule "vendor/golang.org/x/net"]
 	path = vendor/golang.org/x/net
 	url = https://go.googlesource.com/net
+[submodule "vendor/github.com/frizinak/gnotifier"]
+	path = vendor/github.com/frizinak/gnotifier
+	url = https://github.com/frizinak/gnotifier
