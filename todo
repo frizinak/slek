@@ -33,3 +33,4 @@
 [ ] l:     implement notifications
 [ ] h:     setUserAsActive on interval or own presence event?
 [ ] l:     turn ":)" and the likes into ":smile:"
+[ ] h:     #/@ /users /all-users /u /au

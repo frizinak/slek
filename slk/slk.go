@@ -133,9 +133,14 @@ func (s *Slk) Mark(e Entity) error {
 
 	switch e.GetType() {
 	case TypeChannel:
-		s.c.SetChannelReadMark(e.GetID(), e.getLatest())
+		if e.(*channel).isChannel {
+			err = s.c.SetChannelReadMark(e.GetID(), e.getLatest())
+			break
+		}
+
+		err = s.c.SetGroupReadMark(e.GetID(), e.getLatest())
 	case TypeUser:
-		s.c.MarkIMChannel(s.getIMByUser(e.GetID()).ID, e.getLatest())
+		err = s.c.MarkIMChannel(s.getIMByUser(e.GetID()).ID, e.getLatest())
 	default:
 		err = fmt.Errorf("Can't mark a %s", e.GetType())
 	}
