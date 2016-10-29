@@ -145,10 +145,25 @@ var status = map[int]string{
 	slk.ListItemStatusBad:    fmt.Sprintf("%s●%s", colorRed, colorReset),
 }
 
-func (t *format) List(title string, items []*slk.ListItem) string {
-	l := make([]string, len(items))
-	for i, item := range items {
-		l[i] = fmt.Sprintf("%s %s", status[item.Status], item.Value)
+func (t *format) List(
+	title string,
+	items []*slk.ListItem,
+	reverse bool,
+) string {
+	l := make([]string, 0, len(items))
+	i := 0
+	e := len(items)
+	diff := 1
+	if reverse {
+		i, e = e-1, i-1
+		diff = -1
+	}
+
+	for ; i != e; i += diff {
+		l = append(
+			l,
+			fmt.Sprintf("%s %s", status[items[i].Status], items[i].Value),
+		)
 	}
 
 	return fmt.Sprintf(

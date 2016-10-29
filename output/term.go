@@ -369,8 +369,8 @@ func (t *Term) Debug(msg ...string) {
 	t.infoText(t.format.Debug(msg...))
 }
 
-func (t *Term) List(title string, items []*slk.ListItem) {
-	t.infoText(t.format.List(title, items))
+func (t *Term) List(title string, items []*slk.ListItem, reverse bool) {
+	t.infoText(t.format.List(title, items, reverse))
 }
 
 func (t *Term) GetInput() string {

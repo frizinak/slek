@@ -58,5 +58,5 @@ type Output interface {
 	Debug(msg ...string)
 	Typing(channel, user string, timeout time.Duration)
 	File(channel, from, title, url string)
-	List(title string, items []*ListItem)
+	List(title string, items []*ListItem, reverse bool)
 }

@@ -221,26 +221,52 @@ func (s *Slk) Pins(e Entity) error {
 	for i := range items {
 		var url string
 		var msg string
+		var from = nilUser
+		var timestamp time.Time
+
 		if items[i].File != nil {
+			from = s.getUser(items[i].File.User)
 			url = items[i].File.URLPrivate
+			timestamp = items[i].File.Timestamp.Time()
 		}
 
 		if items[i].Message != nil {
+			if from.IsNil() {
+				from = s.getUser(items[i].Message.User)
+			}
 			msg = items[i].Message.Text
+			timestamp = ts(items[i].Message.Timestamp)
 		}
 
-		if url == "" || msg == "" {
-			continue
+		// Don't return early so we know parsing is flawed
+		// if only the username and stamp are shown without msg or url.
+
+		if msg == "" {
+			listItems = append(listItems, &ListItem{ListItemStatusNone, url})
+		} else {
+			listItems = append(listItems, &ListItem{ListItemStatusNone, msg})
 		}
 
-		// TODO s.out.PinsList or expose file / msg formatters
 		listItems = append(
 			listItems,
-			&ListItem{ListItemStatusNone, fmt.Sprintf("u:%s t:%s", url, msg)},
+			&ListItem{
+				ListItemStatusNormal,
+				fmt.Sprintf(
+					"%s: %s",
+					from.GetQualifiedName(),
+					timestamp.Format("02/01 15:04:05"),
+				),
+			},
 		)
+
 	}
 
-	s.out.List(fmt.Sprintf("Pinned in %s", e.GetQualifiedName()), listItems)
+	s.out.List(
+		fmt.Sprintf("Pinned in %s", e.GetQualifiedName()),
+		listItems,
+		true,
+	)
+
 	return nil
 }
 
@@ -307,7 +333,7 @@ func (s *Slk) List(eType EntityType, relevantOnly bool) error {
 
 	if items != nil {
 		sort.Sort(items)
-		s.out.List(title, items)
+		s.out.List(title, items, false)
 		return nil
 	}
 
@@ -341,6 +367,7 @@ func (s *Slk) Members(e Entity, relevanOnly bool) error {
 	s.out.List(
 		fmt.Sprintf("Users in %s", channel.GetQualifiedName()),
 		items,
+		false,
 	)
 
 	return nil

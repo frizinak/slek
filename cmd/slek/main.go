@@ -137,7 +137,7 @@ func (s *slek) normalCommand(cmd string, args []string) bool {
 		s.t.Notice("HELP (#room = @user #group or #channel)")
 		helps := []string{"General", "Messages", "Rooms", "Listings"}
 		for i, title := range helps {
-			s.t.List(title, help[i])
+			s.t.List(title, help[i], false)
 		}
 	case "quit", "exit":
 		s.quit <- true
