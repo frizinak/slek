@@ -14,6 +14,28 @@ lame gif:
 
 or [download](https://github.com/frizinak/slek/releases) a binary
 
+
+## Example config
+
+.slek  
+
+optional: editor vim:  
+- `st` terminal  
+- `-c float` x11 window class so your wm can apply rules to it.  
+- `-e <cmd` command your terminal should spawn  
+- `nvim +'set syntax=' +'startinsert!' {}` start vim/neovim without syntax
+highlighting, start in (A)ppend mode and open tempfile {}  
+
+```
+{
+    "username": "username",
+    "token":    "abcd-token",
+    "editor":   "st -c float -e nvim +'set syntax=' +'startinsert!' {}",
+    "notification_timeout": 8000
+}
+
+```
+
 ## License
 
 GPL-3.0
