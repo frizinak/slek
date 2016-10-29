@@ -201,6 +201,49 @@ func (s *Slk) History(e Entity, amount int) error {
 	return nil
 }
 
+func (s *Slk) Pins(e Entity) error {
+	var err error
+	var items []slack.Item
+
+	if e.GetType() != TypeChannel {
+		err = fmt.Errorf("Can't list pins of a %s", e.GetType())
+		s.out.Warn(err.Error())
+		return err
+	}
+
+	items, _, err = s.c.ListPins(e.GetID())
+	if err != nil {
+		s.out.Warn(err.Error())
+		return err
+	}
+
+	listItems := make(ListItems, 0, len(items))
+	for i := range items {
+		var url string
+		var msg string
+		if items[i].File != nil {
+			url = items[i].File.URLPrivate
+		}
+
+		if items[i].Message != nil {
+			msg = items[i].Message.Text
+		}
+
+		if url == "" || msg == "" {
+			continue
+		}
+
+		// TODO s.out.PinsList or expose file / msg formatters
+		listItems = append(
+			listItems,
+			&ListItem{ListItemStatusNone, fmt.Sprintf("u:%s t:%s", url, msg)},
+		)
+	}
+
+	s.out.List(fmt.Sprintf("Pinned in %s", e.GetQualifiedName()), listItems)
+	return nil
+}
+
 func (s *Slk) Fuzzy(entityType EntityType, query string) []Entity {
 	s.RLock()
 	defer s.RUnlock()
@@ -626,10 +669,30 @@ func (s *Slk) getUser(id string) *user {
 	return nilUser
 }
 
+func (s *Slk) getUserByName(name string) *user {
+	s.RLock()
+	defer s.RUnlock()
+	if u, ok := s.usersByName[name]; ok {
+		return u
+	}
+
+	return nilUser
+}
+
 func (s *Slk) getChannel(id string) *channel {
 	s.RLock()
 	defer s.RUnlock()
 	if ch, ok := s.channels[id]; ok {
+		return ch
+	}
+
+	return nilChan
+}
+
+func (s *Slk) getChannelByName(name string) *channel {
+	s.RLock()
+	defer s.RUnlock()
+	if ch, ok := s.channelsByName[name]; ok {
 		return ch
 	}
 

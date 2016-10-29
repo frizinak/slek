@@ -176,6 +176,9 @@ func (s *slek) entityCommand(e slk.Entity, args []string) bool {
 
 		s.c.History(e, n)
 		return true
+	case "/pins":
+		s.c.Pins(e)
+		return true
 	case "/u", "/users":
 		s.c.Members(e, true)
 		return true
@@ -326,7 +329,10 @@ func (s *slek) run() error {
 				continue
 			}
 
-			s.c.Post(e, trimFields(args))
+			msg := trimFields(args)
+			if err := s.c.Post(e, msg); err != nil {
+				s.t.SetInput(msg, -1, -1, false)
+			}
 		}
 	}()
 
