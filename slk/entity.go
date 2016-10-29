@@ -6,28 +6,33 @@ const (
 	userPresenceActive = "active"
 )
 
-var (
-	nilUser = &user{
-		User: &slack.User{
-			ID:       "-",
-			Name:     "UNKNOWN USER",
-			RealName: "UNKNOWN USER",
-		},
-	}
-
-	nilChan = &channel{}
-	nilIM   = &slack.IM{User: "-"}
-
+const (
+	nilID                  = "-"
+	nilName                = "UNKNOWN"
 	TypeChannel EntityType = "channel"
 	TypeUser    EntityType = "user"
 )
 
-func init() {
-	nilChan.id = "-"
-	nilChan.name = "UNKNOWN CHANNEL"
-	nilChan.creator = "-"
-	nilChan.members = []string{}
+var (
+	nilUser = &user{
+		User: &slack.User{
+			ID:       nilID,
+			Name:     nilName,
+			RealName: nilName,
+		},
+	}
 
+	nilChan = &channel{
+		id:      nilID,
+		name:    nilName,
+		creator: nilName,
+		members: []string{},
+	}
+
+	nilIM = &slack.IM{User: nilID}
+)
+
+func init() {
 	nilIM.ID = "-"
 }
 
@@ -40,6 +45,7 @@ type Entity interface {
 	GetType() EntityType
 	GetUnreadCount() int
 	IsActive() bool
+	IsNil() bool
 	getLastRead() string
 	getLatest() string
 }
@@ -80,6 +86,10 @@ func (c *channel) IsActive() bool {
 	return c.isMember
 }
 
+func (c *channel) IsNil() bool {
+	return c.GetID() == nilID
+}
+
 func (c *channel) getLastRead() string {
 	return c.lastRead
 }
@@ -117,6 +127,10 @@ func (u *user) GetUnreadCount() int {
 
 func (u *user) IsActive() bool {
 	return u.Presence == userPresenceActive
+}
+
+func (u *user) IsNil() bool {
+	return u.GetID() == nilID
 }
 
 func (u *user) getLastRead() string {

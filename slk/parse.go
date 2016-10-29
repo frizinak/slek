@@ -1,7 +1,6 @@
 package slk
 
 import (
-	"fmt"
 	"html"
 	"regexp"
 	"strconv"
@@ -12,13 +11,14 @@ import (
 )
 
 var (
-	reChannel     = regexp.MustCompile(`<#([^>]+)>`)
-	reChannelRepl = regexp.MustCompile(`<#([^>|]+)>`)
-	reMention     = regexp.MustCompile(`<@([^>]+)>`)
-	reMentionRepl = regexp.MustCompile(`<@([^>|]+)`)
+	reEntity     = regexp.MustCompile(`<(#|@)([^>]+)>`)
+	reEntityRepl = regexp.MustCompile(`<(#|@)([^>|]+)(?:|[^>]+)?>`)
+
+	reOutMention = regexp.MustCompile(`!(.)([^\s]+)`)
 )
 
 func ts(ts string) (t time.Time) {
+	t = time.Unix(0, 0)
 	_s := strings.Split(ts, ".")
 	sec, err := strconv.Atoi(_s[0])
 	if err != nil {
@@ -35,50 +35,71 @@ func ts(ts string) (t time.Time) {
 	return
 }
 
-func (s *Slk) parseText(texts ...string) (parsed string, mentions []string) {
+func (s *Slk) parseTextOutgoing(text string) (string, error) {
+	return text, nil
+	// matches := reOutMention.FindAllStringSubmatch(text, -1)
+	// errs := []string{}
+	// for i := range matches {
+	// 	typeStr := matches[i][1]
+	// 	name := matches[i][2]
+	// 	var entity Entity
+	// 	switch typeStr {
+	// 	case "@":
+	// 		entity = s.getUserByName(name)
+	// 	case "#":
+	// 		entity = s.getChannelByName(name)
+	// 	}
+
+	// 	if entity == nilChan || entity == nilUser {
+	// 		errs = append(errs, matches[i][0])
+	// 		continue
+	// 	}
+
+	// 	text = strings.Replace(
+	// 		text,
+	// 		matches[i][0],
+	// 		fmt.Sprintf("<%s%s>", typeStr, entity.GetID()),
+	// 		-1,
+	// 	)
+	// }
+
+	// var err error
+	// if len(errs) != 0 {
+	// 	err = fmt.Errorf(
+	// 		"Could not resolve mention: %s",
+	// 		strings.Join(errs, ", "),
+	// 	)
+	// }
+
+	// return text, err
+}
+
+func (s *Slk) parseTextIncoming(texts ...string) (parsed string, mentions []string) {
 	clean := make([]string, 0, len(texts))
 	for i := range texts {
 
-		txt := reMention.ReplaceAllStringFunc(
+		txt := reEntity.ReplaceAllStringFunc(
 			html.UnescapeString(texts[i]),
 			func(str string) string {
-				var id string
-				m := reMentionRepl.FindStringSubmatch(str)
-
-				if len(m) > 1 {
-					id = m[1]
-				} else {
-					id = strings.Trim(str, "@<>")
+				m := reEntityRepl.FindStringSubmatch(str)
+				if len(m) != 3 {
+					return str
 				}
 
-				u := s.getUser(id)
-				if u != nilUser {
-					mentions = append(mentions, u.Name)
-					return fmt.Sprintf("@%s", u.Name)
+				var entity Entity
+				switch m[1] {
+				case "@":
+					entity = s.getUser(m[2])
+				case "#":
+					entity = s.getChannel(m[2])
 				}
 
-				return id
-			},
-		)
-
-		txt = reChannel.ReplaceAllStringFunc(
-			txt,
-			func(str string) string {
-				var id string
-				m := reChannelRepl.FindStringSubmatch(str)
-
-				if len(m) > 1 {
-					id = m[1]
-				} else {
-					id = strings.Trim(str, "#<>")
+				if !entity.IsNil() {
+					mentions = append(mentions, entity.GetName())
+					return entity.GetQualifiedName()
 				}
 
-				c := s.getChannel(id)
-				if c != nilChan {
-					return fmt.Sprintf("#%s", c.name)
-				}
-
-				return id
+				return str
 			},
 		)
 

@@ -393,10 +393,10 @@ func (s *Slk) Run() error {
 		case *slack.UserTypingEvent:
 			channel := s.getChannel(d.Channel)
 			channelName := channel.GetName()
-			if channel == nilChan {
+			if channel.IsNil() {
 				channelName = "Unknown channel / user"
 				user := s.getUser(s.getIM(d.Channel).User)
-				if user != nilUser {
+				if !user.IsNil() {
 					channelName = "IM"
 				}
 			}
@@ -404,7 +404,7 @@ func (s *Slk) Run() error {
 			s.out.Typing(
 				channelName,
 				s.getUser(d.User).GetName(),
-				time.Second*3,
+				time.Second*4,
 			)
 		case *slack.MessageEvent:
 			m := slack.Message(*d)
@@ -445,6 +445,10 @@ func (s *Slk) Run() error {
 			)
 
 		case *slack.PrefChangeEvent:
+			switch d.Name {
+			case "emoji_use":
+				continue
+			}
 			// TODO lookup which preferences are relevant to slek.
 			s.out.Debug(e.Type, d.Name, string(d.Value))
 		case *slack.ConnectingEvent:
@@ -502,9 +506,9 @@ func (s *Slk) reaction(r interface{}) {
 	channel := s.getChannel(channelID)
 	entity = channel
 
-	if channel == nilChan || !channel.isMember {
+	if channel.IsNil() || !channel.isMember {
 		entity = s.getUser(s.getIM(channelID).User)
-		if entity == nilUser {
+		if entity.IsNil() {
 			return
 		}
 	}
@@ -538,9 +542,9 @@ func (s *Slk) msg(m *slack.Message, newSection bool, notify bool) {
 	entity = ch
 
 	im := false
-	if ch == nilChan {
+	if ch.IsNil() {
 		user := s.getUser(s.getIM(m.Channel).User)
-		im = user != nilUser
+		im = !user.IsNil()
 		entity = user
 	}
 
@@ -549,7 +553,7 @@ func (s *Slk) msg(m *slack.Message, newSection bool, notify bool) {
 		username = m.Username
 	}
 
-	text, mentions := s.parseText(
+	text, mentions := s.parseTextIncoming(
 		append([]string{m.Text},
 			s.parseAttachments(m.Attachments)...)...,
 	)

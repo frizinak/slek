@@ -82,7 +82,7 @@ func (s *Slk) channelHistory(
 ) (*slack.History, error) {
 	channel := s.getChannel(ch)
 
-	if channel == nilChan {
+	if channel.IsNil() {
 		return nil, errors.New("No such channel...")
 	}
 
@@ -95,7 +95,7 @@ func (s *Slk) groupHistory(
 ) (*slack.History, error) {
 	channel := s.getChannel(ch)
 
-	if channel == nilChan {
+	if channel.IsNil() {
 		return nil, errors.New("No such channel...")
 	}
 

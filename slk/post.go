@@ -8,6 +8,12 @@ import (
 )
 
 func (s *Slk) post(e Entity, msg string) error {
+	var err error
+	msg, err = s.parseTextOutgoing(msg)
+	if err != nil {
+		return err
+	}
+
 	switch e.GetType() {
 	case TypeUser:
 		return s.postIM(e.GetID(), msg)
@@ -30,6 +36,7 @@ func (s *Slk) postChannel(ch, msg string) error {
 	p := slack.NewPostMessageParameters()
 	p.Username = s.username
 	p.AsUser = true
+	p.LinkNames = 1
 
 	_, _, err := s.r.PostMessage(channel.GetID(), msg, p)
 
@@ -48,6 +55,7 @@ func (s *Slk) postIM(name string, msg string) error {
 	p := slack.NewPostMessageParameters()
 	p.Username = s.username
 	p.AsUser = true
+	p.LinkNames = 1
 
 	_, _, err := s.r.PostMessage(user.ID, msg, p)
 

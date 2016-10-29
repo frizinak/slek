@@ -76,7 +76,7 @@ func (s *Slk) updateUsersCounts() error {
 
 	for i := range response.Channels {
 		c := s.getChannel(response.Channels[i].ID)
-		if c != nilChan {
+		if !c.IsNil() {
 			c.lastRead = response.Channels[i].LastRead
 			c.latest = response.Channels[i].Latest
 			c.unread = response.Channels[i].UnreadCount
@@ -85,7 +85,7 @@ func (s *Slk) updateUsersCounts() error {
 
 	for i := range response.Groups {
 		c := s.getChannel(response.Groups[i].ID)
-		if c != nilChan {
+		if !c.IsNil() {
 			c.lastRead = response.Groups[i].LastRead
 			c.latest = response.Groups[i].Latest
 			c.unread = response.Groups[i].UnreadCount
@@ -94,7 +94,7 @@ func (s *Slk) updateUsersCounts() error {
 
 	for i := range response.IMs {
 		u := s.getUser(response.IMs[i].UserID)
-		if u != nilUser {
+		if !u.IsNil() {
 			u.lastRead = response.IMs[i].LastRead
 			u.latest = response.IMs[i].Latest
 			u.unread = response.IMs[i].UnreadCount
