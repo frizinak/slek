@@ -36,3 +36,11 @@
 [x] h:     #/@ /users /all-users /u /au
 [x] h-36:  help
 [ ] h-36:  update channel.members
+[x] h:     pins
+[ ] m:     pins event
+[ ] h:     /invite @user
+[x] h:     line/word wrapping
+[ ] h:     resize / move / something the info view
+[x] h:     mentioning
+[-] h:     refactor nilChan/nilUser into isNil() on Entity
+[ ] l-45:  wrap IM ?
