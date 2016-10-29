@@ -1,29 +1,27 @@
-bin := slek
-os := $(shell uname | tr [:upper:] [:lower:])
-$(os)_gox := disabled
-src := $(shell find . -type f -name '*.go')
+SRC := $(shell find . -type f -name '*.go')
+CROSSARCH := amd64 386
+CROSSOS := darwin linux #TODO gnotifier: openbsd netbsd freebsd
+CROSS := $(foreach os,$(CROSSOS),$(foreach arch,$(CROSSARCH),dist/$(os).$(arch)))
 
-.PHONY: build clean run cross
+.PHONY: lint reset cross
 
-build: dist/$(bin)_$(os)
+dist/slek: $(SRC)
+	go build -o $@ ./cmd/slek
 
-cross: dist/$(bin)_darwin dist/$(bin)_linux
+lint:
+	@-{ golint ./slk/...; \
+		golint ./output/...; \
+		golint ./cmd/...; } | grep -v "exported .* should have comment"
 
-$(linux_gox)dist/$(bin)_linux: $(src) | dist
-	gox -osarch="linux/amd64" -output="dist/droplet_linux" ./cmd/slek
+cross: $(CROSS)
 
-$(darwin_gox)dist/$(bin)_darwin: $(src) | dist
-	gox -osarch="darwin/amd64" -output="dist/$(bin)_darwin" ./cmd/slek
+$(CROSS): $(SRC)
+	echo $@
+	gox \
+		-osarch=$(shell basename $@ | sed 's/\./\//') \
+		-output="dist/{{.OS}}.{{.Arch}}" \
+		./cmd/slek
 
-dist/$(bin)_$(os): $(src) | dist
-		go build -o "dist/$(bin)_$(os)" ./cmd/slek 
-
-dist:
-	mkdir dist
-
-clean:
-	rm -rf dist
-
-run:
-	go run cmd/slek/*.go
+reset:
+	-rm -rf dist
 
