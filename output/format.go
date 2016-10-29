@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/frizinak/slek/slk"
+	"github.com/mitchellh/go-wordwrap"
 )
 
 var (
@@ -34,6 +35,10 @@ type msgPrefix struct {
 type format struct {
 	ownUsername string
 	lastPrefix  *msgPrefix
+}
+
+func (t *format) wrap(str string, len uint) string {
+	return wordwrap.WrapString(str, len)
 }
 
 func (t *format) Info(msg string) string {

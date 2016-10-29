@@ -31,6 +31,8 @@ type Term struct {
 
 	clearEventMutex sync.Mutex
 	clearEventBox   *time.Time
+	boxWidth        uint
+	infoWidth       uint
 }
 
 func NewTerm(
@@ -422,7 +424,7 @@ func (t *Term) text(which, msg string) {
 	t.gQueue <- func(g *gocui.Gui) error {
 		v, _ := g.View(which)
 		if v != nil {
-			fmt.Fprint(v, msg+"\n")
+			fmt.Fprint(v, t.wrap(msg, t.boxWidth)+"\n")
 		}
 		return nil
 	}
@@ -464,7 +466,7 @@ func (t *Term) eventText(msg string, timeout time.Duration) {
 		v, _ := g.View("event")
 		v.Clear()
 		if v != nil {
-			fmt.Fprint(v, msg)
+			fmt.Fprint(v, t.wrap(msg, t.infoWidth))
 		}
 		return nil
 	}
@@ -475,6 +477,8 @@ func (t *Term) layout(g *gocui.Gui) error {
 	maxX--
 
 	boxW := int(2 * float64(maxX) / 3)
+	t.boxWidth = uint(boxW - 2)
+
 	if v, err := g.SetView("box", 0, 0, boxW, maxY-6); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
@@ -485,6 +489,7 @@ func (t *Term) layout(g *gocui.Gui) error {
 		v.Wrap = true
 	}
 
+	t.infoWidth = uint(maxX - boxW - 4)
 	if v, err := g.SetView("info", boxW+2, 0, maxX, maxY-6); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err

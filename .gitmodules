@@ -19,3 +19,6 @@
 [submodule "vendor/github.com/frizinak/gnotifier"]
 	path = vendor/github.com/frizinak/gnotifier
 	url = https://github.com/frizinak/gnotifier
+[submodule "vendor/github.com/mitchellh/go-wordwrap"]
+	path = vendor/github.com/mitchellh/go-wordwrap
+	url = https://github.com/mitchellh/go-wordwrap

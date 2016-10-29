@@ -28,5 +28,6 @@ GPL-3.0
 [nlopes/slack](https://github.com/nlopes/slack)  
 [nsf/termbox-go](https://github.com/nsf/termbox-go)  
 [renstrom/fuzzysearch](https://github.com/renstrom/fuzzysearch)  
+[mitchellh/go-wordwrap](https://github.com/mitchellh/go-wordwrap)  
 
 suet, mokit & freddi for running an untrusted binary on their macs.
