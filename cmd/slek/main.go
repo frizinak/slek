@@ -24,25 +24,27 @@ import (
 
 var (
 	stderr = log.New(os.Stderr, "", 0)
-	help   = []slk.ListItems{
-		{
-			{slk.ListItemStatusNone, "quit             : quit slek"},
-			{slk.ListItemStatusNone, "exit             : quit slek"},
-		},
-		{
-			{slk.ListItemStatusNone, "#room <msg>: send <msg>"},
-		},
-		{
-			{slk.ListItemStatusNone, "#room /h <n>          : get history (<n> items)"},
-			{slk.ListItemStatusNone, "#room /u | /users:    : list online users in #room"},
-			{slk.ListItemStatusNone, "#room /au | /all-users: list all users in #room"},
-		},
-		{
-			{slk.ListItemStatusNone, "users | u        : list online users"},
-			{slk.ListItemStatusNone, "all-users | au   : list all users"},
-			{slk.ListItemStatusNone, "channels | c     : list joined channels"},
-			{slk.ListItemStatusNone, "all-channels | ac: list all channels"},
-		},
+	help   = slk.ListItems{
+		{slk.ListItemStatusTitle, "HELP (#room = @user #group or #channel)"},
+
+		{slk.ListItemStatusTitle, "General"},
+		{slk.ListItemStatusNone, "quit             : quit slek"},
+		{slk.ListItemStatusNone, "exit             : quit slek"},
+
+		{slk.ListItemStatusTitle, "Messages"},
+		{slk.ListItemStatusNone, "#room <msg>: send <msg>"},
+
+		{slk.ListItemStatusTitle, "Rooms"},
+		{slk.ListItemStatusNone, "#room /h <n>          : get history (<n> items)"},
+		{slk.ListItemStatusNone, "#room /u | /users:    : list online users in #room"},
+		{slk.ListItemStatusNone, "#room /au | /all-users: list all users in #room"},
+		{slk.ListItemStatusNone, "#room /p | /pins      : list pins of #room"},
+
+		{slk.ListItemStatusTitle, "Listings"},
+		{slk.ListItemStatusNone, "users | u        : list online users"},
+		{slk.ListItemStatusNone, "all-users | au   : list all users"},
+		{slk.ListItemStatusNone, "channels | c     : list joined channels"},
+		{slk.ListItemStatusNone, "all-channels | ac: list all channels"},
 	}
 )
 
@@ -134,11 +136,7 @@ func (s *slek) fuzzy(
 func (s *slek) normalCommand(cmd string, args []string) bool {
 	switch cmd {
 	case "?", "h", "help", "/help":
-		s.t.Notice("HELP (#room = @user #group or #channel)")
-		helps := []string{"General", "Messages", "Rooms", "Listings"}
-		for i, title := range helps {
-			s.t.List(title, help[i], false)
-		}
+		s.t.List(help, false)
 	case "quit", "exit":
 		s.quit <- true
 		return true
@@ -176,7 +174,7 @@ func (s *slek) entityCommand(e slk.Entity, args []string) bool {
 
 		s.c.History(e, n)
 		return true
-	case "/pins":
+	case "/p", "/pins":
 		s.c.Pins(e)
 		return true
 	case "/u", "/users":

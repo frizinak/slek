@@ -11,6 +11,7 @@ const (
 	ListItemStatusGood
 	ListItemStatusBad
 	ListItemStatusNormal
+	ListItemStatusTitle
 )
 
 type ListItemStatus string
@@ -58,5 +59,5 @@ type Output interface {
 	Debug(msg ...string)
 	Typing(channel, user string, timeout time.Duration)
 	File(channel, from, title, url string)
-	List(title string, items []*ListItem, reverse bool)
+	List(items []*ListItem, reverse bool)
 }

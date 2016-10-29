@@ -12,8 +12,21 @@ import (
 	"github.com/mattn/go-runewidth"
 )
 
+const (
+	viewEvent  = "event"
+	viewInfo   = "info"
+	viewChat   = "chat"
+	viewInput  = "input"
+	viewTyping = "typing"
+)
+
 type notification struct {
 	channel, from, text string
+}
+
+type view struct {
+	name  string
+	frame bool
 }
 
 type Term struct {
@@ -33,6 +46,8 @@ type Term struct {
 	clearEventBox   *time.Time
 	boxWidth        uint
 	infoWidth       uint
+	typingWidth     uint
+	views           []*view
 }
 
 func NewTerm(
@@ -42,7 +57,7 @@ func NewTerm(
 	notificationTimeout time.Duration,
 ) (t *Term, input chan string) {
 	input = make(chan string, 1)
-	queue := make(chan gocui.Handler, 0)
+	queue := make(chan gocui.Handler, 10) // Allow 10 recursive updates? :s
 
 	t = &Term{
 		format:              format{ownUsername: username},
@@ -51,6 +66,13 @@ func NewTerm(
 		notifyChan:          make(chan *notification, 1),
 		notificationLimit:   notificationLimit,
 		notificationTimeout: notificationTimeout,
+		views: []*view{
+			{viewEvent, false},
+			{viewInfo, true},
+			{viewChat, true},
+			{viewInput, true},
+			{viewTyping, false},
+		},
 	}
 
 	return
@@ -103,7 +125,7 @@ func (t *Term) Init() (err error) {
 
 	t.g.SetLayout(t.layout)
 
-	views := []string{"input", "box", "info"}
+	views := []string{viewInput, viewChat}
 	cview := 0
 
 	autoScroll := func(g *gocui.Gui, v *gocui.View) error {
@@ -113,7 +135,7 @@ func (t *Term) Init() (err error) {
 	}
 
 	submit := func(g *gocui.Gui, v *gocui.View) error {
-		t.submit(g)
+		t.submit()
 		return nil
 	}
 
@@ -124,24 +146,16 @@ func (t *Term) Init() (err error) {
 	}
 
 	next := func(g *gocui.Gui, v *gocui.View) error {
+		if g.CurrentView().Name() == viewInfo {
+			cview--
+		}
+
 		if cview++; cview >= len(views) {
 			cview = 0
 		}
 
-		for i := range views {
-			v, err := g.View(views[i])
-			if err != nil {
-				return err
-			}
-			v.Frame = i == cview
-
-			if i != cview {
-				autoScroll(g, v)
-			}
-		}
-
-		_, err := g.SetCurrentView(views[cview])
-		return err
+		t.setActive(views[cview])
+		return nil
 	}
 
 	quit := func(g *gocui.Gui, v *gocui.View) error {
@@ -163,17 +177,17 @@ func (t *Term) Init() (err error) {
 		return
 	}
 
-	err = t.g.SetKeybinding("input", gocui.KeyEnter, gocui.ModNone, submit)
+	err = t.g.SetKeybinding(viewInput, gocui.KeyEnter, gocui.ModNone, submit)
 	if err != nil {
 		return
 	}
 
-	err = t.g.SetKeybinding("input", gocui.KeyCtrlC, gocui.ModNone, clear)
+	err = t.g.SetKeybinding(viewInput, gocui.KeyCtrlC, gocui.ModNone, clear)
 	if err != nil {
 		return
 	}
 
-	for _, view := range []string{"box", "info"} {
+	for _, view := range []string{viewChat, viewInfo} {
 		maxScroll := func(g *gocui.Gui, v *gocui.View, intent int) int {
 			if intent < 0 {
 				// termbox already protects against scrolling up to far
@@ -252,6 +266,8 @@ func (t *Term) Init() (err error) {
 		}
 	}
 
+	t.setActive(viewInput)
+
 	return
 }
 
@@ -260,7 +276,7 @@ func (t *Term) BindKey(key gocui.Key, handler func() error) error {
 		return handler()
 	}
 
-	return t.g.SetKeybinding("input", key, gocui.ModNone, h)
+	return t.g.SetKeybinding(viewInput, key, gocui.ModNone, h)
 }
 
 func (t *Term) Run() error {
@@ -285,7 +301,7 @@ func (t *Term) Run() error {
 			t.clearEventMutex.Unlock()
 
 			t.gQueue <- func(g *gocui.Gui) error {
-				v, _ := g.View("event")
+				v, _ := g.View(viewTyping)
 				v.Clear()
 				return nil
 			}
@@ -330,27 +346,20 @@ func (t *Term) Notify(channel, from, text string, force bool) {
 
 	msg := strings.Join(f, " ")
 	if err := gnotifier.Notify(title, msg, t.notificationTimeout); err != nil {
-		t.Warn("Failed to trigger notification")
-		t.Notice(
-			fmt.Sprintf(
-				"Notification:\n%s\n%s",
-				title,
-				msg,
-			),
-		)
+		t.Warn(fmt.Sprintf("Failed to trigger notification: [%s] %s", title, msg))
 	}
 }
 
 func (t *Term) Info(msg string) {
-	t.infoText(t.format.Info(msg))
+	t.eventText(t.format.Info(msg))
 }
 
 func (t *Term) Notice(msg string) {
-	t.infoText(t.format.Notice(msg))
+	t.eventText(t.format.Notice(msg))
 }
 
 func (t *Term) Warn(msg string) {
-	t.infoText(t.format.Warn(msg))
+	t.eventText(t.format.Warn(msg))
 }
 
 func (t *Term) Msg(channel, from, msg string, ts time.Time, section bool) {
@@ -362,26 +371,26 @@ func (t *Term) File(channel, from, title, url string) {
 }
 
 func (t *Term) Typing(channel, user string, timeout time.Duration) {
-	t.eventText(t.format.Typing(channel, user), timeout)
+	t.typingText(t.format.Typing(channel, user), timeout)
 }
 
 func (t *Term) Debug(msg ...string) {
 	t.infoText(t.format.Debug(msg...))
 }
 
-func (t *Term) List(title string, items []*slk.ListItem, reverse bool) {
-	t.infoText(t.format.List(title, items, reverse))
+func (t *Term) List(items []*slk.ListItem, reverse bool) {
+	t.infoText(t.format.List(items, reverse))
 }
 
 func (t *Term) GetInput() string {
-	v, _ := t.g.View("input")
+	v, _ := t.g.View(viewInput)
 	return v.Buffer()
 }
 
 func (t *Term) SetInput(str string, posX int, posY int, submit bool) {
 	t.g.Execute(
 		func(g *gocui.Gui) error {
-			v, _ := g.View("input")
+			v, _ := g.View(viewInput)
 			if v == nil {
 				return nil
 			}
@@ -406,7 +415,7 @@ func (t *Term) SetInput(str string, posX int, posY int, submit bool) {
 			v.SetOrigin(0, posY)
 			v.SetCursor(posX, 0)
 			if submit {
-				t.submit(t.g)
+				t.submit()
 			}
 
 			return nil
@@ -414,18 +423,38 @@ func (t *Term) SetInput(str string, posX int, posY int, submit bool) {
 	)
 }
 
-func (t *Term) submit(g *gocui.Gui) {
-	v, _ := g.View("input")
-	t.SetInput("", -1, -1, false)
-	t.input <- v.Buffer()
+func (t *Term) setActive(which string) {
+	t.gQueue <- func(g *gocui.Gui) error {
+		for _, v := range t.views {
+			view, err := g.View(v.name)
+			if err != nil {
+				return err
+			}
+
+			view.Frame = v.name == which && v.frame
+			if v.name != which {
+				view.SetOrigin(0, 0)
+				view.Autoscroll = true
+			}
+		}
+
+		if which != viewInfo {
+			g.SetViewOnTop(viewChat)
+		}
+
+		if _, err := g.SetViewOnTop(which); err != nil {
+			return err
+		}
+		_, err := g.SetCurrentView(which)
+		return err
+	}
 }
 
-func (t *Term) text(which, msg string) {
+func (t *Term) submit() {
 	t.gQueue <- func(g *gocui.Gui) error {
-		v, _ := g.View(which)
-		if v != nil {
-			fmt.Fprint(v, t.wrap(msg, t.boxWidth)+"\n")
-		}
+		v, _ := g.View(viewInput)
+		t.SetInput("", -1, -1, false)
+		t.input <- v.Buffer()
 		return nil
 	}
 }
@@ -446,15 +475,42 @@ func (t *Term) update() {
 	}
 }
 
+func (t *Term) text(which, msg string, width uint, clear bool) {
+	t.gQueue <- func(g *gocui.Gui) error {
+		v, _ := g.View(which)
+		if v != nil {
+			if clear {
+				v.Clear()
+			}
+
+			if width != 0 {
+				msg = t.wrap(msg, width)
+			}
+
+			fmt.Fprint(v, msg+"\n")
+		}
+
+		if which == viewInfo {
+			t.setActive(which)
+		}
+
+		return nil
+	}
+}
+
 func (t *Term) boxText(msg string) {
-	t.text("box", msg)
+	t.text(viewChat, msg, t.boxWidth, false)
 }
 
 func (t *Term) infoText(msg string) {
-	t.text("info", msg)
+	t.text(viewInfo, msg, t.infoWidth, true)
 }
 
-func (t *Term) eventText(msg string, timeout time.Duration) {
+func (t *Term) eventText(msg string) {
+	t.text(viewEvent, msg, 0, true)
+}
+
+func (t *Term) typingText(msg string, timeout time.Duration) {
 	at := time.Now().Add(timeout)
 	t.clearEventMutex.Lock()
 	defer t.clearEventMutex.Unlock()
@@ -462,24 +518,18 @@ func (t *Term) eventText(msg string, timeout time.Duration) {
 		t.clearEventBox = &at
 	}
 
-	t.gQueue <- func(g *gocui.Gui) error {
-		v, _ := g.View("event")
-		v.Clear()
-		if v != nil {
-			fmt.Fprint(v, t.wrap(msg, t.infoWidth))
-		}
-		return nil
-	}
+	t.text(viewTyping, msg, t.typingWidth, true)
 }
 
 func (t *Term) layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
 	maxX--
 
-	boxW := int(2 * float64(maxX) / 3)
+	boxW := maxX
 	t.boxWidth = uint(boxW - 2)
+	t.typingWidth = t.boxWidth
 
-	if v, err := g.SetView("box", 0, 0, boxW, maxY-6); err != nil {
+	if v, err := g.SetView(viewChat, 0, 3, boxW, maxY-6); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
@@ -489,22 +539,19 @@ func (t *Term) layout(g *gocui.Gui) error {
 		v.Wrap = true
 	}
 
-	t.infoWidth = uint(maxX - boxW - 4)
-	if v, err := g.SetView("info", boxW+2, 0, maxX, maxY-6); err != nil {
+	t.infoWidth = t.boxWidth - 20
+	if v, err := g.SetView(viewInfo, 10, 10, boxW-10, maxY-16); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
 
-		v.Frame = false
+		v.Frame = true
 		v.Autoscroll = true
 		v.Wrap = true
 	}
 
-	if v, err := g.SetView("input", 2, maxY-6, maxX-1, maxY-3); err != nil {
+	if v, err := g.SetView(viewInput, 0, maxY-6, boxW, maxY-3); err != nil {
 		if err != gocui.ErrUnknownView {
-			return err
-		}
-		if _, err := g.SetCurrentView("input"); err != nil {
 			return err
 		}
 
@@ -513,7 +560,17 @@ func (t *Term) layout(g *gocui.Gui) error {
 		v.Wrap = true
 	}
 
-	if v, err := g.SetView("event", 2, maxY-3, maxX-1, maxY); err != nil {
+	if v, err := g.SetView(viewEvent, 2, 0, maxX-1, 3); err != nil {
+		if err != gocui.ErrUnknownView {
+			return err
+		}
+
+		v.Frame = false
+		v.Wrap = false
+		v.Autoscroll = true
+	}
+
+	if v, err := g.SetView(viewTyping, 0, maxY-3, boxW, maxY); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}

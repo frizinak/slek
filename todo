@@ -44,3 +44,5 @@
 [x] h:     mentioning
 [-] h:     refactor nilChan/nilUser into isNil() on Entity
 [ ] l-45:  wrap IM ?
+[ ] h:     recover from panic and try to gracefully shutdown termbox
+[ ] h:     allow exit before having fetched metadata (e.g.: no internet = hang)

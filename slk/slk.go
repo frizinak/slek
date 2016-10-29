@@ -217,7 +217,7 @@ func (s *Slk) Pins(e Entity) error {
 		return err
 	}
 
-	listItems := make(ListItems, 0, len(items))
+	listItems := make(ListItems, 0, len(items)+1)
 	for i := range items {
 		var url string
 		var msg string
@@ -261,8 +261,15 @@ func (s *Slk) Pins(e Entity) error {
 
 	}
 
+	listItems = append(
+		listItems,
+		&ListItem{
+			ListItemStatusTitle,
+			fmt.Sprintf("Pinned in %s", e.GetQualifiedName()),
+		},
+	)
+
 	s.out.List(
-		fmt.Sprintf("Pinned in %s", e.GetQualifiedName()),
 		listItems,
 		true,
 	)
@@ -333,11 +340,17 @@ func (s *Slk) List(eType EntityType, relevantOnly bool) error {
 
 	if items != nil {
 		sort.Sort(items)
-		s.out.List(title, items, false)
+		_items := make(ListItems, 1, len(items)+1)
+		_items[0] = &ListItem{ListItemStatusTitle, title}
+		_items = append(_items, items...)
+		s.out.List(_items, false)
 		return nil
 	}
 
-	return fmt.Errorf("Can not list items of type %s", eType)
+	err := fmt.Errorf("Can not list items of type %s", eType)
+	s.out.Warn(err.Error())
+
+	return err
 }
 
 func (s *Slk) Members(e Entity, relevanOnly bool) error {
@@ -364,9 +377,15 @@ func (s *Slk) Members(e Entity, relevanOnly bool) error {
 	}
 
 	sort.Sort(items)
-	s.out.List(
+	_items := make(ListItems, 1, len(items)+1)
+	_items[0] = &ListItem{
+		ListItemStatusTitle,
 		fmt.Sprintf("Users in %s", channel.GetQualifiedName()),
-		items,
+	}
+	_items = append(_items, items...)
+
+	s.out.List(
+		_items,
 		false,
 	)
 

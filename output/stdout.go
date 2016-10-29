@@ -53,6 +53,6 @@ func (s *Stdout) Debug(msg ...string) {
 	stderr.Println(s.format.Debug(msg...))
 }
 
-func (s *Stdout) List(title string, items []*slk.ListItem, reverse bool) {
-	std.Println(s.format.List(title, items, reverse))
+func (s *Stdout) List(items []*slk.ListItem, reverse bool) {
+	std.Println(s.format.List(items, reverse))
 }
