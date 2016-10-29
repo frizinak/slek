@@ -8,12 +8,6 @@ import (
 )
 
 func (s *Slk) post(e Entity, msg string) error {
-	var err error
-	msg, err = s.parseTextOutgoing(msg)
-	if err != nil {
-		return err
-	}
-
 	switch e.GetType() {
 	case TypeUser:
 		return s.postIM(e.GetID(), msg)

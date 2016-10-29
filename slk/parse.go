@@ -13,8 +13,6 @@ import (
 var (
 	reEntity     = regexp.MustCompile(`<(#|@)([^>]+)>`)
 	reEntityRepl = regexp.MustCompile(`<(#|@)([^>|]+)(?:|[^>]+)?>`)
-
-	reOutMention = regexp.MustCompile(`!(.)([^\s]+)`)
 )
 
 func ts(ts string) (t time.Time) {
@@ -33,45 +31,6 @@ func ts(ts string) (t time.Time) {
 	t = time.Unix(int64(sec), int64(nsec*1e9))
 
 	return
-}
-
-func (s *Slk) parseTextOutgoing(text string) (string, error) {
-	return text, nil
-	// matches := reOutMention.FindAllStringSubmatch(text, -1)
-	// errs := []string{}
-	// for i := range matches {
-	// 	typeStr := matches[i][1]
-	// 	name := matches[i][2]
-	// 	var entity Entity
-	// 	switch typeStr {
-	// 	case "@":
-	// 		entity = s.getUserByName(name)
-	// 	case "#":
-	// 		entity = s.getChannelByName(name)
-	// 	}
-
-	// 	if entity == nilChan || entity == nilUser {
-	// 		errs = append(errs, matches[i][0])
-	// 		continue
-	// 	}
-
-	// 	text = strings.Replace(
-	// 		text,
-	// 		matches[i][0],
-	// 		fmt.Sprintf("<%s%s>", typeStr, entity.GetID()),
-	// 		-1,
-	// 	)
-	// }
-
-	// var err error
-	// if len(errs) != 0 {
-	// 	err = fmt.Errorf(
-	// 		"Could not resolve mention: %s",
-	// 		strings.Join(errs, ", "),
-	// 	)
-	// }
-
-	// return text, err
 }
 
 func (s *Slk) parseTextIncoming(texts ...string) (parsed string, mentions []string) {
