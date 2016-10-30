@@ -12,6 +12,9 @@ import (
 	"github.com/nlopes/slack"
 )
 
+// Slk abstracts a bunch of nlopes/slack calls and writes all output to
+// the given Output interface.
+// Handling of errors returned by Slk exposed methods is optional.
 type Slk struct {
 	out      Output
 	username string
@@ -27,6 +30,28 @@ type Slk struct {
 	imsByUser      map[string]*slack.IM
 }
 
+// NewSlk returns a new Slk 'engine'.
+func NewSlk(username, token string, output Output) *Slk {
+	var rw sync.RWMutex
+
+	return &Slk{
+		output,
+		username,
+		&rw,
+		token,
+		slack.New(token),
+		nil,
+		map[string]*user{},
+		map[string]*user{},
+		map[string]*channel{},
+		map[string]*channel{},
+		map[string]*slack.IM{},
+		map[string]*slack.IM{},
+	}
+}
+
+// Init fetches all ims, channels, users and userscounts and should be
+// called before Run.
 func (s *Slk) Init() error {
 	if err := s.updateIMs(); err != nil {
 		return err
@@ -47,25 +72,7 @@ func (s *Slk) Init() error {
 	return nil
 }
 
-func NewSlk(username, token string, output Output) *Slk {
-	var rw sync.RWMutex
-
-	return &Slk{
-		output,
-		username,
-		&rw,
-		token,
-		slack.New(token),
-		nil,
-		map[string]*user{},
-		map[string]*user{},
-		map[string]*channel{},
-		map[string]*channel{},
-		map[string]*slack.IM{},
-		map[string]*slack.IM{},
-	}
-}
-
+// Invite a user to a channel or group.
 func (s *Slk) Invite(channel, user Entity) error {
 	if err := s.invite(channel, user); err != nil {
 		s.out.Warn(err.Error())
@@ -76,6 +83,7 @@ func (s *Slk) Invite(channel, user Entity) error {
 	return nil
 }
 
+// Join makes your user join the given channel or group.
 func (s *Slk) Join(e Entity) error {
 	if err := s.join(e); err != nil {
 		s.out.Warn(err.Error())
@@ -86,6 +94,7 @@ func (s *Slk) Join(e Entity) error {
 	return nil
 }
 
+// Leave makes your user leave the given channel or group.
 func (s *Slk) Leave(e Entity) error {
 	if err := s.leave(e); err != nil {
 		s.out.Warn(err.Error())
@@ -96,6 +105,7 @@ func (s *Slk) Leave(e Entity) error {
 	return nil
 }
 
+// Joined returns a list of channels and groups you are a member of.
 func (s *Slk) Joined() []Entity {
 	joined := make([]Entity, 0)
 	for i := range s.channels {
@@ -107,6 +117,7 @@ func (s *Slk) Joined() []Entity {
 	return joined
 }
 
+// IMs returns a list of users you have intiated an IM channel with.
 func (s *Slk) IMs() []Entity {
 	users := make([]Entity, 0)
 	for i := range s.users {
@@ -119,6 +130,7 @@ func (s *Slk) IMs() []Entity {
 	return users
 }
 
+// Post a message to the given user, channel or group.
 func (s *Slk) Post(e Entity, msg string) error {
 	if err := s.post(e, msg); err != nil {
 		s.out.Warn(err.Error())
@@ -128,6 +140,7 @@ func (s *Slk) Post(e Entity, msg string) error {
 	return nil
 }
 
+// Mark the last read message in an IM, channel or group.
 func (s *Slk) Mark(e Entity) error {
 	var err error
 
@@ -152,6 +165,8 @@ func (s *Slk) Mark(e Entity) error {
 	return err
 }
 
+// Unread writes all unread mesages of the given user, channel or group
+// to the Output interface and marks the last message as read.
 func (s *Slk) Unread(e Entity) error {
 	last := e.getLastRead()
 	latest := e.getLatest()
@@ -188,6 +203,9 @@ func (s *Slk) Unread(e Entity) error {
 	return nil
 }
 
+// History like Unread writes a set of messages to the Output interface
+// but takes an amount of messages argument instead of looking up unread
+// messages.
 func (s *Slk) History(e Entity, amount int) error {
 	p := slack.NewHistoryParameters()
 	p.Count = amount
@@ -201,6 +219,8 @@ func (s *Slk) History(e Entity, amount int) error {
 	return nil
 }
 
+// Pins writes the last 100 (?) pins of a channel or group to the
+// Output interface.
 func (s *Slk) Pins(e Entity) error {
 	var err error
 	var items []slack.Item
@@ -277,6 +297,8 @@ func (s *Slk) Pins(e Entity) error {
 	return nil
 }
 
+// Fuzzy returns a list of entities of type entityType whose names fuzzy match
+// the given query.
 func (s *Slk) Fuzzy(entityType EntityType, query string) []Entity {
 	s.RLock()
 	defer s.RUnlock()
@@ -299,14 +321,15 @@ func (s *Slk) Fuzzy(entityType EntityType, query string) []Entity {
 	return fuzzySearch(query, lookup)
 }
 
-func (s *Slk) List(eType EntityType, relevantOnly bool) error {
+// List writes a list of entities of type entityType to the Output interface.
+func (s *Slk) List(entityType EntityType, relevantOnly bool) error {
 	s.RLock()
 	defer s.RUnlock()
 
 	var items ListItems
 	var title string
 
-	switch eType {
+	switch entityType {
 	case TypeChannel:
 		title = "Channels:"
 		items = make(ListItems, 0, len(s.channels))
@@ -347,12 +370,14 @@ func (s *Slk) List(eType EntityType, relevantOnly bool) error {
 		return nil
 	}
 
-	err := fmt.Errorf("Can not list items of type %s", eType)
+	err := fmt.Errorf("Can not list items of type %s", entityType)
 	s.out.Warn(err.Error())
 
 	return err
 }
 
+// Members writes a list of members of the given channel or group to the
+// Output interface.
 func (s *Slk) Members(e Entity, relevanOnly bool) error {
 	channel, ok := e.(*channel)
 	if !ok {
@@ -392,6 +417,7 @@ func (s *Slk) Members(e Entity, relevanOnly bool) error {
 	return nil
 }
 
+// Quit closes the slack RTM connection.
 func (s *Slk) Quit() {
 	s.r.Disconnect()
 	// TODO we might still receive events on s.r.IncomingEvents
@@ -399,12 +425,15 @@ func (s *Slk) Quit() {
 	close(s.r.IncomingEvents)
 }
 
+// Run opens the slack RTM connection and starts handling events.
+// Should only be called once.
 func (s *Slk) Run() error {
 	if s.r != nil {
 		return errors.New("Already running?")
 	}
 
 	go func() {
+		// TODO Quit should also quit this loop.
 		for {
 			time.Sleep(time.Second * 20)
 			s.updateIMs()

@@ -29,6 +29,9 @@ type view struct {
 	frame bool
 }
 
+// Term is a gocui / termbox slk.Output implementation that allows
+// for user input which is communicated over
+// the input channel as returned by NewTerm.
 type Term struct {
 	format
 	input chan string
@@ -50,6 +53,8 @@ type Term struct {
 	views           []*view
 }
 
+// NewTerm returns a Term and an input channel which will receive the current
+// input field contents when it is 'submitted'.
 func NewTerm(
 	appName,
 	username string,
@@ -78,6 +83,7 @@ func NewTerm(
 	return
 }
 
+// Init sets up the gocui / termbox environment.
 func (t *Term) Init() (err error) {
 	t.g = gocui.NewGui()
 
@@ -271,6 +277,7 @@ func (t *Term) Init() (err error) {
 	return
 }
 
+// BindKey allows binding a gocui.Key-press to the given handler.
 func (t *Term) BindKey(key gocui.Key, handler func() error) error {
 	h := func(g *gocui.Gui, v *gocui.View) error {
 		return handler()
@@ -279,6 +286,7 @@ func (t *Term) BindKey(key gocui.Key, handler func() error) error {
 	return t.g.SetKeybinding(viewInput, key, gocui.ModNone, h)
 }
 
+// Run starts the gocui and Term event loop.
 func (t *Term) Run() error {
 	defer close(t.input)
 	defer t.g.Close()
@@ -316,6 +324,9 @@ func (t *Term) Run() error {
 
 }
 
+// Quit should stop the event loop and return the terminal to
+// a usable state.
+// TODO block until we've actually quit.
 func (t *Term) Quit() {
 	t.gQueue <- func(g *gocui.Gui) error {
 		return gocui.ErrQuit
@@ -378,15 +389,24 @@ func (t *Term) Debug(msg ...string) {
 	t.infoText(t.format.Debug(msg...))
 }
 
-func (t *Term) List(items []*slk.ListItem, reverse bool) {
-	t.infoText(t.format.List(items, reverse))
+func (t *Term) List(list slk.ListItems, reverse bool) {
+	t.infoText(t.format.List(list, reverse))
 }
 
+// GetInput returns the contents of the input field.
 func (t *Term) GetInput() string {
 	v, _ := t.g.View(viewInput)
 	return v.Buffer()
 }
 
+// SetInput overwrites the current input field and sets the cursor
+// to posX x posY.
+//
+// If posY == -1 the cursor will be set to the last line.
+//
+// If posX == -1 the cursor will be set the last column of the current line.
+//
+// If submit == true the contents will be send to the input channel.
 func (t *Term) SetInput(str string, posX int, posY int, submit bool) {
 	t.g.Execute(
 		func(g *gocui.Gui) error {

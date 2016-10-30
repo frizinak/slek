@@ -146,12 +146,12 @@ var status = map[int]string{
 }
 
 func (t *format) List(
-	items []*slk.ListItem,
+	list slk.ListItems,
 	reverse bool,
 ) string {
-	l := make([]string, 0, len(items))
+	l := make([]string, 0, len(list))
 	i := 0
-	e := len(items)
+	e := len(list)
 	diff := 1
 	if reverse {
 		i, e = e-1, i-1
@@ -159,14 +159,14 @@ func (t *format) List(
 	}
 
 	for ; i != e; i += diff {
-		s := items[i].Status
+		s := list[i].Status
 		if s == slk.ListItemStatusTitle {
 			l = append(
 				l,
 				fmt.Sprintf(
 					"%s %s %s",
 					colorBgGreen,
-					items[i].Value,
+					list[i].Value,
 					colorReset,
 				),
 			)
@@ -175,7 +175,7 @@ func (t *format) List(
 
 		l = append(
 			l,
-			fmt.Sprintf("%s %s", status[s], items[i].Value),
+			fmt.Sprintf("%s %s", status[s], list[i].Value),
 		)
 	}
 

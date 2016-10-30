@@ -9,9 +9,9 @@ dist/slek: $(SRC)
 	go build -o $@ ./cmd/slek
 
 lint:
-	@-{ golint ./slk/...; \
-		golint ./output/...; \
-		golint ./cmd/...; } | grep -v "exported .* should have comment"
+	@- golint ./slk/...
+	@- golint ./output/...
+	@- golint ./cmd/...
 
 cross: $(CROSS)
 

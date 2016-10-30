@@ -4,13 +4,13 @@ import "github.com/nlopes/slack"
 
 const (
 	userPresenceActive = "active"
-)
+	nilID              = "-"
+	nilName            = "UNKNOWN"
 
-const (
-	nilID                  = "-"
-	nilName                = "UNKNOWN"
+	// TypeChannel identifies the channel-type
 	TypeChannel EntityType = "channel"
-	TypeUser    EntityType = "user"
+	// TypeUser identifies the user-type
+	TypeUser EntityType = "user"
 )
 
 var (
@@ -33,11 +33,13 @@ var (
 )
 
 func init() {
-	nilIM.ID = "-"
+	nilIM.ID = "-" // :(
 }
 
+// EntityType represents a slack entity-type (i.e.: channel, user, ...)
 type EntityType string
 
+// Entity abstracts users, groups and channels
 type Entity interface {
 	GetID() string
 	GetName() string

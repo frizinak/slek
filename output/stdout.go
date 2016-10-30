@@ -13,10 +13,13 @@ var (
 	stderr = log.New(os.Stderr, "", log.LstdFlags)
 )
 
+// Stdout is a simple slk.Output implementation that writes everything
+// to stdout.
 type Stdout struct {
 	format
 }
 
+// NewStdout returns an Stdout
 func NewStdout(username string) *Stdout {
 	return &Stdout{format{ownUsername: username}}
 }
@@ -53,6 +56,6 @@ func (s *Stdout) Debug(msg ...string) {
 	stderr.Println(s.format.Debug(msg...))
 }
 
-func (s *Stdout) List(items []*slk.ListItem, reverse bool) {
-	std.Println(s.format.List(items, reverse))
+func (s *Stdout) List(list slk.ListItems, reverse bool) {
+	std.Println(s.format.List(list, reverse))
 }
