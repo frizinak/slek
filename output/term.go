@@ -148,7 +148,11 @@ func (t *Term) Init() (err error) {
 	scrollView := func(v *gocui.View, dy int) error {
 		v.Autoscroll = false
 		ox, oy := v.Origin()
-		return v.SetOrigin(ox, oy+dy)
+		y := oy + dy
+		if y < 0 {
+			y = 0
+		}
+		return v.SetOrigin(ox, y)
 	}
 
 	next := func(g *gocui.Gui, v *gocui.View) error {
@@ -227,12 +231,12 @@ func (t *Term) Init() (err error) {
 		}
 
 		pup := func(g *gocui.Gui, v *gocui.View) error {
-			_, maxY := g.Size()
+			_, maxY := v.Size()
 			scrollView(v, -int(float64(maxY)/2))
 			return nil
 		}
 		pdown := func(g *gocui.Gui, v *gocui.View) error {
-			_, maxY := g.Size()
+			_, maxY := v.Size()
 			scrollView(v, maxScroll(g, v, int(float64(maxY)/2)))
 			return nil
 		}
@@ -454,7 +458,7 @@ func (t *Term) setActive(which string) {
 			view.Frame = v.name == which && v.frame
 			if v.name != which {
 				view.SetOrigin(0, 0)
-				view.Autoscroll = true
+				view.Autoscroll = v.name != viewInfo
 			}
 		}
 
@@ -566,7 +570,7 @@ func (t *Term) layout(g *gocui.Gui) error {
 		}
 
 		v.Frame = true
-		v.Autoscroll = true
+		v.Autoscroll = false
 		v.Wrap = true
 	}
 
