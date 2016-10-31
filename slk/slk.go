@@ -52,16 +52,19 @@ func NewSlk(username, token string, output Output) *Slk {
 
 // Init fetches all ims, channels, users and userscounts and should be
 // called before Run.
+//
+// TODO use slk.Run's rtm.Info and lets client know we have all metadata
+// in order for them to be able to use slk.Unread etc.
 func (s *Slk) Init() error {
-	if err := s.updateIMs(); err != nil {
+	if err := s.updateIMs(nil); err != nil {
 		return err
 	}
 
-	if err := s.updateUsers(); err != nil {
+	if err := s.updateUsers(nil); err != nil {
 		return err
 	}
 
-	if err := s.updateChannels(); err != nil {
+	if err := s.updateChannels(nil, nil); err != nil {
 		return err
 	}
 
@@ -435,18 +438,53 @@ func (s *Slk) Run() error {
 	go func() {
 		// TODO Quit should also quit this loop.
 		for {
-			time.Sleep(time.Second * 20)
-			s.updateIMs()
-			s.updateUsers()
-			s.updateChannels()
+			time.Sleep(time.Second * 60)
+			// s.updateIMs(nil)
+			// s.updateUsers(nil)
+			// Still required for channel.members
+			s.updateChannels(nil, nil)
 		}
 	}()
 
 	s.r = s.c.NewRTM()
 	go s.r.ManageConnection()
+	for {
+		time.Sleep(time.Millisecond * 10)
+		d := s.r.GetInfo()
+		if d != nil {
+			s.updateIMs(d.IMs)
+			s.updateUsers(d.Users)
+			s.updateChannels(d.Channels, d.Groups)
+			break
+		}
+	}
 
 	for e := range s.r.IncomingEvents {
 		switch d := e.Data.(type) {
+
+		case *slack.GroupCreatedEvent:
+			s.updateChannels(nil, nil)
+		case *slack.GroupArchiveEvent:
+			s.updateChannels(nil, nil)
+		case *slack.GroupUnarchiveEvent:
+			s.updateChannels(nil, nil)
+
+		case *slack.ChannelCreatedEvent:
+			s.updateChannels(nil, nil)
+		case *slack.ChannelArchiveEvent:
+			s.updateChannels(nil, nil)
+		case *slack.ChannelUnarchiveEvent:
+			s.updateChannels(nil, nil)
+		case *slack.ChannelDeletedEvent:
+			s.updateChannels(nil, nil)
+
+		case *slack.TeamJoinEvent:
+			s.updateIMs(nil)
+			s.updateUsers(nil)
+
+		case *slack.IMCreatedEvent:
+			s.updateIMs(nil)
+
 		case *slack.PresenceChangeEvent:
 			s.getUser(d.User).Presence = d.Presence
 			// TODO notice or something
@@ -661,10 +699,13 @@ func (s *Slk) msg(m *slack.Message, newSection bool, notify bool) {
 	)
 }
 
-func (s *Slk) updateUsers() error {
-	users, err := s.c.GetUsers()
-	if err != nil {
-		return err
+func (s *Slk) updateUsers(users []slack.User) error {
+	if users == nil {
+		var err error
+		users, err = s.c.GetUsers()
+		if err != nil {
+			return err
+		}
 	}
 
 	_users := make(map[string]*user, len(users))
@@ -676,8 +717,8 @@ func (s *Slk) updateUsers() error {
 		_users[users[i].ID] = u
 		usersByName[users[i].Name] = u
 	}
-
 	s.RUnlock()
+
 	s.Lock()
 	defer s.Unlock()
 	s.users = _users
@@ -686,15 +727,24 @@ func (s *Slk) updateUsers() error {
 	return nil
 }
 
-func (s *Slk) updateChannels() error {
-	channels, err := s.c.GetChannels(true)
-	if err != nil {
-		return err
+func (s *Slk) updateChannels(
+	channels []slack.Channel,
+	groups []slack.Group,
+) error {
+	var err error
+
+	if channels == nil {
+		channels, err = s.c.GetChannels(true)
+		if err != nil {
+			return err
+		}
 	}
 
-	groups, err := s.c.GetGroups(true)
-	if err != nil {
-		return err
+	if groups == nil {
+		groups, err = s.c.GetGroups(true)
+		if err != nil {
+			return err
+		}
 	}
 
 	_channels := make(map[string]*channel, len(channels))
@@ -719,20 +769,23 @@ func (s *Slk) updateChannels() error {
 	return nil
 }
 
-func (s *Slk) updateIMs() error {
-	channels, err := s.c.GetIMChannels()
-	if err != nil {
-		return err
+func (s *Slk) updateIMs(ims []slack.IM) error {
+	if ims == nil {
+		var err error
+		ims, err = s.c.GetIMChannels()
+		if err != nil {
+			return err
+		}
 	}
 
 	s.Lock()
 	defer s.Unlock()
 
-	s.ims = make(map[string]*slack.IM, len(channels))
-	s.imsByUser = make(map[string]*slack.IM, len(channels))
-	for i := range channels {
-		s.ims[channels[i].ID] = &channels[i]
-		s.imsByUser[channels[i].User] = &channels[i]
+	s.ims = make(map[string]*slack.IM, len(ims))
+	s.imsByUser = make(map[string]*slack.IM, len(ims))
+	for i := range ims {
+		s.ims[ims[i].ID] = &ims[i]
+		s.imsByUser[ims[i].User] = &ims[i]
 	}
 
 	return nil

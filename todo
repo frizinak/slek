@@ -40,7 +40,7 @@
 [ ] m:     pins event
 [ ] h:     /invite @user
 [x] h:     line/word wrapping
-[ ] h:     resize / move / something the info view
+[x] h:     resize / move / something the info view
 [x] h:     mentioning
 [-] h:     refactor nilChan/nilUser into isNil() on Entity
 [ ] l-45:  wrap IM ?
