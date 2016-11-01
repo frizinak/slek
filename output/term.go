@@ -619,8 +619,6 @@ func editor(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
 		v.EditDelete(false)
 	case key == gocui.KeyInsert:
 		v.Overwrite = !v.Overwrite
-	case key == gocui.KeyEnter:
-		v.EditNewLine()
 	case key == gocui.KeyArrowDown:
 		move(v, 0, 1)
 	case key == gocui.KeyArrowUp:
