@@ -448,16 +448,17 @@ func (s *Slk) Run() error {
 
 	s.r = s.c.NewRTM()
 	go s.r.ManageConnection()
-	for {
-		time.Sleep(time.Millisecond * 10)
-		d := s.r.GetInfo()
-		if d != nil {
-			s.updateIMs(d.IMs)
-			s.updateUsers(d.Users)
-			s.updateChannels(d.Channels, d.Groups)
-			break
-		}
-	}
+	// TODO see Init
+	// for {
+	// 	time.Sleep(time.Millisecond * 10)
+	// 	d := s.r.GetInfo()
+	// 	if d != nil {
+	// 		s.updateIMs(d.IMs)
+	// 		s.updateUsers(d.Users)
+	// 		s.updateChannels(d.Channels, d.Groups)
+	// 		break
+	// 	}
+	// }
 
 	for e := range s.r.IncomingEvents {
 		switch d := e.Data.(type) {
