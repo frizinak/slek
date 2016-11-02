@@ -583,7 +583,7 @@ func (t *Term) layout(g *gocui.Gui) error {
 	}
 
 	t.infoWidth = t.boxWidth - 20
-	if v, err := g.SetView(viewInfo, 10, 10, boxW-10, maxY-16); err != nil {
+	if v, err := g.SetView(viewInfo, 10, 3, boxW-10, maxY-3); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
