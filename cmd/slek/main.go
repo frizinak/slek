@@ -6,12 +6,14 @@ import (
 	"log"
 	"os"
 	"os/user"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/frizinak/slek/cmd/config"
+	"github.com/frizinak/slek/cmd/slek/assets"
 	"github.com/frizinak/slek/output"
 	"github.com/frizinak/slek/slk"
 	"github.com/jroimartin/gocui"
@@ -53,6 +55,30 @@ func trimFields(i []string) string {
 	return strings.TrimSpace(strings.Join(i, " "))
 }
 
+func getIcon() string {
+	raw, err := assets.Asset("slek.png")
+	if err != nil {
+		return ""
+	}
+
+	iconPath := path.Join(os.TempDir(), "slek-icon-iHFyCPH8eQ.png")
+	f, err := os.Create(iconPath)
+	if f != nil {
+		defer f.Close()
+	}
+
+	if err != nil {
+		return ""
+	}
+
+	_, err = f.Write(raw)
+	if err != nil {
+		return ""
+	}
+
+	return iconPath
+}
+
 type slek struct {
 	c         *slk.Slk
 	t         *output.Term
@@ -62,7 +88,8 @@ type slek struct {
 }
 
 func newSlek(token, editorCmd string, ntfy time.Duration) *slek {
-	t, input := output.NewTerm("slk", "", time.Second*5, ntfy)
+
+	t, input := output.NewTerm("slek", getIcon(), "", time.Second*5, ntfy)
 	c := slk.NewSlk(
 		token,
 		t,

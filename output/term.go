@@ -34,8 +34,10 @@ type view struct {
 // the input channel as returned by NewTerm.
 type Term struct {
 	format
-	input chan string
-	g     *gocui.Gui
+	appName string
+	appIcon string
+	input   chan string
+	g       *gocui.Gui
 	// Since gocui.Execute spawns goroutines
 	// none of the update events are guaranteed to
 	// be excuted in order.
@@ -57,6 +59,7 @@ type Term struct {
 // input field contents when it is 'submitted'.
 func NewTerm(
 	appName,
+	appIcon,
 	username string,
 	notificationLimit time.Duration,
 	notificationTimeout time.Duration,
@@ -66,6 +69,8 @@ func NewTerm(
 
 	t = &Term{
 		format:              format{ownUsername: username},
+		appName:             appName,
+		appIcon:             appIcon,
 		input:               input,
 		gQueue:              queue,
 		notifyChan:          make(chan *notification, 1),
@@ -367,7 +372,15 @@ func (t *Term) Notify(channel, from, text string, force bool) {
 	}
 
 	msg := strings.Join(f, " ")
-	if err := gnotifier.Notify(title, msg, t.notificationTimeout); err != nil {
+	err := gnotifier.Notify(
+		t.appName,
+		title,
+		msg,
+		t.notificationTimeout,
+		t.appIcon,
+	)
+
+	if err != nil {
 		t.Warn(fmt.Sprintf("Failed to trigger notification: [%s] %s", title, msg))
 	}
 }

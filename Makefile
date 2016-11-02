@@ -1,11 +1,13 @@
 SRC := $(shell find . -type f -name '*.go')
+ASSET := cmd/slek/assets
+ASSETS := $(shell find $(ASSET)/assets -type f)
 CROSSARCH := amd64 386
-CROSSOS := darwin linux #TODO gnotifier: openbsd netbsd freebsd
+CROSSOS := darwin linux openbsd netbsd freebsd
 CROSS := $(foreach os,$(CROSSOS),$(foreach arch,$(CROSSARCH),dist/$(os).$(arch)))
 
 .PHONY: lint reset cross
 
-dist/slek: $(SRC)
+dist/slek: $(SRC) $(ASSET)/assets.go
 	go build -o $@ ./cmd/slek
 
 lint:
@@ -13,9 +15,12 @@ lint:
 	@- golint ./output/...
 	@- golint ./cmd/...
 
+$(ASSET)/assets.go: $(ASSETS)
+	go-bindata -pkg assets -o $@ -prefix $(ASSET)/assets $(ASSET)/assets/...
+
 cross: $(CROSS)
 
-$(CROSS): $(SRC)
+$(CROSS): $(SRC) cmd/slek/assets/assets.go
 	echo $@
 	gox \
 		-osarch=$(shell basename $@ | sed 's/\./\//') \
@@ -24,4 +29,5 @@ $(CROSS): $(SRC)
 
 reset:
 	-rm -rf dist
+	-rm $(ASSET)/assets.go
 
