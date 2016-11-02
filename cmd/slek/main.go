@@ -3,11 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"os/user"
 	"path/filepath"
 	"strconv"
@@ -19,7 +16,6 @@ import (
 	"github.com/frizinak/slek/output"
 	"github.com/frizinak/slek/slk"
 	"github.com/jroimartin/gocui"
-	"github.com/mattn/go-runewidth"
 )
 
 var (
@@ -75,64 +71,6 @@ func newSlek(username, token, editorCmd string, ntfy time.Duration) *slek {
 	return &slek{c, t, input, strings.TrimSpace(editorCmd), make(chan bool)}
 }
 
-func (s *slek) fuzzy(
-	eType slk.EntityType,
-	query,
-	prefix string,
-	args []string,
-) slk.Entity {
-	opts := s.c.Fuzzy(eType, query)
-
-	if eType == "" {
-		s.t.Notice(fmt.Sprintf("No type '%s'", eType))
-		return nil
-	}
-
-	if len(opts) == 1 {
-		// autocomplete and bail
-		s.t.SetInput(fmt.Sprintf("%s%s ", prefix, opts[0].GetName()), -1, -1, false)
-		return opts[0]
-	}
-
-	for i := range opts {
-		// multiple matches
-		if query == opts[i].GetName() {
-			s.t.SetInput(
-				fmt.Sprintf("%s%s ", prefix, opts[0].GetName()),
-				-1,
-				-1,
-				false,
-			)
-			return opts[i]
-		}
-	}
-
-	if len(opts) == 0 {
-		s.t.Notice(fmt.Sprintf("No such %s", eType))
-	} else if len(opts) > 1 {
-		names := make([]string, 0, len(opts))
-		for i := range opts {
-			names = append(names, opts[i].GetName())
-		}
-		s.t.Notice(
-			fmt.Sprintf(
-				"Did you mean any of: %s?",
-				strings.Join(names, ", "),
-			),
-		)
-
-		trgt := fmt.Sprintf("%s%s", prefix, opts[0].GetName())
-		s.t.SetInput(
-			fmt.Sprintf("%s %s", trgt, trimFields(args)),
-			runewidth.StringWidth(trgt),
-			0,
-			false,
-		)
-	}
-
-	return nil
-}
-
 func (s *slek) normalCommand(cmd string, args []string) bool {
 	switch cmd {
 	case "?", "h", "help", "/help":
@@ -158,6 +96,38 @@ func (s *slek) normalCommand(cmd string, args []string) bool {
 
 func (s *slek) entityCommand(e slk.Entity, args []string) bool {
 	if len(args) == 0 {
+		return true
+	}
+
+	switch {
+	case len(args[0]) > 0 && args[0][0] == '!':
+		i := 1
+		query := args[0][1:]
+		for ; i < len(args); i++ {
+			if args[i-1][len(args[i-1])-1:] != "\\" {
+				break
+			}
+
+			query += " " + args[i]
+		}
+
+		if len(args) < i+1 {
+			args = []string{}
+		} else {
+			args = args[i:]
+		}
+
+		comment := trimFields(args)
+		path := s.fuzzyPath(
+			e.GetQualifiedName()+" !",
+			query,
+			comment,
+		)
+
+		if path != "" {
+			s.c.Upload(e, path, "", comment)
+		}
+
 		return true
 	}
 
@@ -200,56 +170,6 @@ func (s *slek) entityCommand(e slk.Entity, args []string) bool {
 	}
 
 	return false
-}
-
-func (s *slek) editor(prefix string) {
-	if s.editorCmd == "" {
-		s.t.Warn("No editor command defined")
-	}
-
-	file, err := ioutil.TempFile(os.TempDir(), "slek-edit-")
-	if file != nil {
-		defer os.Remove(file.Name())
-		defer file.Close()
-	}
-
-	if err != nil {
-		s.t.Warn(err.Error())
-		return
-	}
-
-	file.WriteString(prefix)
-
-	cmd := strings.Replace(s.editorCmd, "{}", file.Name(), -1)
-
-	c := exec.Command("sh", "-c", cmd)
-	if err := c.Run(); err != nil {
-		s.t.Warn(fmt.Sprintf("Editor command failed: %s", err.Error()))
-		return
-	}
-
-	if _, err := file.Seek(0, io.SeekStart); err != nil {
-		s.t.Warn(
-			fmt.Sprintf(
-				"Editor command succeeded but could not seek to beginning of file: %s",
-				err.Error(),
-			),
-		)
-		return
-	}
-
-	data, err := ioutil.ReadAll(file)
-	if err != nil {
-		s.t.Warn(
-			fmt.Sprintf(
-				"Editor command succeeded but could not read temp file: %s",
-				err.Error(),
-			),
-		)
-		return
-	}
-
-	s.t.SetInput(string(data), -1, -1, true)
 }
 
 func (s *slek) run() error {
@@ -311,7 +231,7 @@ func (s *slek) run() error {
 				continue
 			}
 
-			e := s.fuzzy(eType, cmd[1:], string(cmd[0]), args)
+			e := s.fuzzy(eType, cmd[1:], args)
 			if e == nil {
 				continue
 			}

@@ -390,7 +390,8 @@ func (t *Term) Typing(channel, user string, timeout time.Duration) {
 }
 
 func (t *Term) Debug(msg ...string) {
-	t.infoText(t.format.Debug(msg...))
+	t.format.Debug(msg...)
+	//t.infoText(t.format.Debug(msg...))
 }
 
 func (t *Term) List(list slk.ListItems, reverse bool) {
@@ -412,39 +413,37 @@ func (t *Term) GetInput() string {
 //
 // If submit == true the contents will be send to the input channel.
 func (t *Term) SetInput(str string, posX int, posY int, submit bool) {
-	t.g.Execute(
-		func(g *gocui.Gui) error {
-			v, _ := g.View(viewInput)
-			if v == nil {
-				return nil
-			}
-
-			v.Clear()
-			fmt.Fprint(v, str)
-
-			parts := strings.Split(str, "\n")
-			var line string
-			if posY < 0 {
-				posY = len(parts) - 1
-			}
-
-			if posY < len(parts) {
-				line = parts[posY]
-			}
-
-			if posX < 0 {
-				posX = runewidth.StringWidth(line)
-			}
-
-			v.SetOrigin(0, posY)
-			v.SetCursor(posX, 0)
-			if submit {
-				t.submit()
-			}
-
+	t.gQueue <- func(g *gocui.Gui) error {
+		v, _ := g.View(viewInput)
+		if v == nil {
 			return nil
-		},
-	)
+		}
+
+		v.Clear()
+		fmt.Fprint(v, str)
+
+		parts := strings.Split(str, "\n")
+		var line string
+		if posY < 0 {
+			posY = len(parts) - 1
+		}
+
+		if posY < len(parts) {
+			line = parts[posY]
+		}
+
+		if posX < 0 {
+			posX = runewidth.StringWidth(line)
+		}
+
+		v.SetOrigin(0, posY)
+		v.SetCursor(posX, 0)
+		if submit {
+			t.submit()
+		}
+
+		return nil
+	}
 }
 
 func (t *Term) setActive(which string) {

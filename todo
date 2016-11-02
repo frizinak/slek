@@ -16,15 +16,15 @@
 [ ] l:     send messages using the rtm api (keep webapi post as fallback?)
 [x] l:     user-is-typing box (or generic feedback box, repurposing info for users and channel listings) + timeout
 [x] l:     update users / channels status on rtm events instead of webapi every n seconds
-[ ] l:     godoc
+[x] l:     godoc
 [ ] l:     logo / notification logo
 [ ] l:     configurable notifications (only mentions and ims / all joined channel messages / take slack preferences into account)
 [ ] l:     fix ratelimit notifications, currently protects against batches but 2 subsequent mentions will still both trigger a notification.
 [ ] l:     fuzzy match more than cmd[0] alone.
-[ ] h:     fileupload
-[ ] l:     document editorCmd
+[x] h:     fileupload
+[x] l:     document editorCmd
 [ ] l:     document usage
-[-] l:     makefile cross compile (gox)
+[x] l:     makefile cross compile (gox)
 [x] m:     ignore events for channels where isMember == false (slack appears to send reaction events for channels we're not a member of)
 [ ] l:     :smile: unicode chars (configurable)
 [ ] l:     support mpim/mpdm or at the very least be able to leave them (legacy slack feature?)

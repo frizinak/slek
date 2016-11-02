@@ -75,6 +75,57 @@ func (s *Slk) Init() error {
 	return nil
 }
 
+// Upload a file to the given entity.
+func (s *Slk) Upload(e Entity, filepath, title, comment string) chan error {
+	ch := make(chan error, 1)
+
+	var id string
+	switch e.GetType() {
+	case TypeUser:
+		id = s.getIMByUser(e.GetID()).ID
+	case TypeChannel:
+		id = e.GetID()
+	default:
+		err := fmt.Errorf("Can not upload to a '%s'", e.GetType())
+		s.out.Warn(err.Error())
+		ch <- err
+		close(ch)
+		return ch
+	}
+
+	p := slack.FileUploadParameters{
+		File:     filepath,
+		Channels: []string{id},
+	}
+
+	if title != "" {
+		p.Title = title
+	}
+
+	if comment != "" {
+		p.InitialComment = comment
+	}
+
+	s.out.Info(
+		fmt.Sprintf(
+			"Starting upload of %s to %s",
+			filepath,
+			e.GetQualifiedName(),
+		),
+	)
+
+	go func() {
+		defer close(ch)
+		_, err := s.c.UploadFile(p)
+		if err != nil {
+			s.out.Warn(err.Error())
+		}
+		ch <- err
+	}()
+
+	return ch
+}
+
 // Invite a user to a channel or group.
 func (s *Slk) Invite(channel, user Entity) error {
 	if err := s.invite(channel, user); err != nil {
