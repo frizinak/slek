@@ -2,10 +2,8 @@
 
 wip [slack](https://slack.com/) cli
 
-lame gif:
-
 <a href="https://raw.github.com/frizinak/slek/master/assets/cast.gif">
-    <img src="https://raw.github.com/frizinak/slek/master/assets/cast.gif" style="width:576px;height:auto;">
+    <img src="https://raw.github.com/frizinak/slek/master/assets/cast.gif">
 </a>
 
 ## Installation
