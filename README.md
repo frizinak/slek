@@ -17,7 +17,7 @@ or [download](https://github.com/frizinak/slek/releases) a binary
 
 ## Example config
 
-.slek  
+~/.slek  
 
 optional: editor vim:  
 - `st` terminal  
@@ -28,7 +28,6 @@ highlighting, start in (A)ppend mode and open tempfile {}
 
 ```
 {
-    "username": "username",
     "token":    "abcd-token",
     "editor":   "st -c float -e nvim +'set syntax=' +'startinsert!' {}",
     "notification_timeout": 8000

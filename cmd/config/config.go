@@ -17,7 +17,6 @@ var (
 
 // Config contains slek config information.
 type Config struct {
-	Username  string `json:"username"`
 	Token     string `json:"token"`
 	EditorCmd string `json:"editor"`
 	// TODO interface type switch, strconv.Atoi if not an int.
@@ -35,7 +34,6 @@ func createConfig(path string) error {
 	}
 
 	_, err = f.WriteString(`{
-    "username": "-",
     "token":    "-",
     "editor":   "",
 	"notification_timeout": 2500

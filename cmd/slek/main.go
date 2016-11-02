@@ -61,10 +61,9 @@ type slek struct {
 	quit      chan bool
 }
 
-func newSlek(username, token, editorCmd string, ntfy time.Duration) *slek {
-	t, input := output.NewTerm("slk", username, time.Second*5, ntfy)
+func newSlek(token, editorCmd string, ntfy time.Duration) *slek {
+	t, input := output.NewTerm("slk", "", time.Second*5, ntfy)
 	c := slk.NewSlk(
-		username,
 		token,
 		t,
 	)
@@ -189,11 +188,14 @@ func (s *slek) run() error {
 	slkErr := make(chan error, 0)
 
 	go func() {
+		s.t.Notice("Connecting...")
 		if err := s.c.Init(); err != nil {
 			slkErr <- err
 			return
 		}
+		s.t.SetUsername(s.c.GetUsername())
 
+		s.t.Notice("Fetching history...")
 		for _, e := range s.c.Joined() {
 			s.c.Unread(e)
 		}
@@ -255,7 +257,6 @@ func (s *slek) run() error {
 		}
 	}()
 
-	s.t.Notice("Connecting...")
 	for {
 		select {
 		case err := <-slkErr:
@@ -269,8 +270,6 @@ func (s *slek) run() error {
 			s.t.Quit()
 		}
 	}
-
-	return nil
 }
 
 func main() {
@@ -296,7 +295,7 @@ func main() {
 	}
 
 	ntfy := time.Duration(conf.NotificationTimeout * 1e6)
-	err = newSlek(conf.Username, conf.Token, conf.EditorCmd, ntfy).run()
+	err = newSlek(conf.Token, conf.EditorCmd, ntfy).run()
 	if err != nil {
 		stderr.Fatal(err)
 	}

@@ -35,12 +35,12 @@ type Slk struct {
 }
 
 // NewSlk returns a new Slk 'engine'.
-func NewSlk(username, token string, output Output) *Slk {
+func NewSlk(token string, output Output) *Slk {
 	var rw sync.RWMutex
 
 	return &Slk{
 		output,
-		username,
+		"",
 		&rw,
 		token,
 		slack.New(token),
@@ -71,6 +71,7 @@ func (s *Slk) Init() error {
 				continue
 			}
 
+			s.username = d.User.Name
 			s.updateUsers(d.Users)
 			s.updateIMs(d.IMs)
 			s.updateChannels(d.Channels, d.Groups)
@@ -79,6 +80,12 @@ func (s *Slk) Init() error {
 			return errors.New("Could not establish rtm connection")
 		}
 	}
+}
+
+// GetUsername returns the name of the user whose api key we are using.
+// Will be populated after Init.
+func (s *Slk) GetUsername() string {
+	return s.username
 }
 
 // Uploads lists the first api page of uploads of the given entity.

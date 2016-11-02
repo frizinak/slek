@@ -281,6 +281,13 @@ func (t *Term) Init() (err error) {
 	return
 }
 
+// SetUsername sets the current user's name so the formatter can make it
+// stand out. Also disables notifications if messages are received from
+// this user.
+func (t *Term) SetUsername(username string) {
+	t.format.setUsername(username)
+}
+
 // BindKey allows binding a gocui.Key-press to the given handler.
 func (t *Term) BindKey(key gocui.Key, handler func() error) error {
 	h := func(g *gocui.Gui, v *gocui.View) error {

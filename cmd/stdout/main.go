@@ -32,9 +32,8 @@ func main() {
 		stderr.Fatal(err)
 	}
 
-	t := output.NewStdout(conf.Username)
+	t := output.NewStdout("")
 	c := slk.NewSlk(
-		conf.Username,
 		conf.Token,
 		t,
 	)
@@ -42,6 +41,8 @@ func main() {
 	if err := c.Init(); err != nil {
 		panic(err)
 	}
+
+	t.SetUsername(c.GetUsername())
 
 	if err := c.Run(); err != nil {
 		panic(err)

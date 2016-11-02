@@ -37,6 +37,10 @@ type format struct {
 	lastPrefix  *msgPrefix
 }
 
+func (t *format) setUsername(username string) {
+	t.ownUsername = username
+}
+
 func (t *format) wrap(str string, len uint) string {
 	return wordwrap.WrapString(str, len)
 }

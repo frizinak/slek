@@ -24,6 +24,12 @@ func NewStdout(username string) *Stdout {
 	return &Stdout{format{ownUsername: username}}
 }
 
+// SetUsername sets the current user's name so the formatter can make it
+// stand out.
+func (s *Stdout) SetUsername(username string) {
+	s.format.setUsername(username)
+}
+
 func (s *Stdout) Notify(channel, from, text string, force bool) {
 	// noop
 }
