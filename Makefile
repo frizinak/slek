@@ -2,7 +2,7 @@ SRC := $(shell find . -type f -name '*.go')
 ASSET := cmd/slek/assets
 ASSETS := $(shell find $(ASSET)/assets -type f)
 CROSSARCH := amd64 386
-CROSSOS := darwin linux openbsd netbsd freebsd
+CROSSOS := darwin linux openbsd netbsd freebsd windows
 CROSS := $(foreach os,$(CROSSOS),$(foreach arch,$(CROSSARCH),dist/$(os).$(arch)))
 
 .PHONY: lint reset cross

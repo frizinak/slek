@@ -14,6 +14,12 @@ lame gif:
 
 or [download](https://github.com/frizinak/slek/releases) a binary
 
+should work on darwin, linux, openbsd, netbsd, freebsd and windows.
+
+notifications:
+- unixes using notify-send
+- mac
+- windows (10 only, timeout <16s = ~7s, >16s = ~25s)
 
 ## Example config
 
