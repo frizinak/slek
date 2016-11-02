@@ -16,7 +16,9 @@ const timeFormat = "02/01 15:04:05"
 
 // Slk abstracts a bunch of nlopes/slack calls and writes all output to
 // the given Output interface.
+//
 // Handling of errors returned by Slk exposed methods is optional.
+// Except for Init and Run.
 type Slk struct {
 	out      Output
 	username string
@@ -52,29 +54,31 @@ func NewSlk(username, token string, output Output) *Slk {
 	}
 }
 
-// Init fetches all ims, channels, users and userscounts and should be
-// called before Run.
-//
-// TODO use slk.Run's rtm.Info and lets client know we have all metadata
-// in order for them to be able to use slk.Unread etc.
+// Init establishes the rtm connection and returns once we have all
+// channel / group / im / user information. Should be called before Run().
 func (s *Slk) Init() error {
-	if err := s.updateIMs(nil); err != nil {
-		return err
+	if s.r != nil {
+		return errors.New("Already initiated?")
 	}
 
-	if err := s.updateUsers(nil); err != nil {
-		return err
-	}
+	s.r = s.c.NewRTM()
+	go s.r.ManageConnection()
+	for {
+		select {
+		case <-time.After(time.Millisecond * 50):
+			d := s.r.GetInfo()
+			if d == nil {
+				continue
+			}
 
-	if err := s.updateChannels(nil, nil); err != nil {
-		return err
+			s.updateUsers(d.Users)
+			s.updateIMs(d.IMs)
+			s.updateChannels(d.Channels, d.Groups)
+			return nil
+		case <-time.After(time.Second * 5):
+			return errors.New("Could not establish rtm connection")
+		}
 	}
-
-	if err := s.updateUsersCounts(); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // Uploads lists the first api page of uploads of the given entity.
@@ -529,34 +533,20 @@ func (s *Slk) Quit() {
 // Run opens the slack RTM connection and starts handling events.
 // Should only be called once.
 func (s *Slk) Run() error {
-	if s.r != nil {
-		return errors.New("Already running?")
+	if s.r == nil {
+		return errors.New("Forgot to call Init()?")
 	}
 
 	go func() {
 		// TODO Quit should also quit this loop.
 		for {
 			time.Sleep(time.Second * 60)
-			// s.updateIMs(nil)
 			// s.updateUsers(nil)
+			// s.updateIMs(nil)
 			// Still required for channel.members
 			s.updateChannels(nil, nil)
 		}
 	}()
-
-	s.r = s.c.NewRTM()
-	go s.r.ManageConnection()
-	// TODO see Init
-	// for {
-	// 	time.Sleep(time.Millisecond * 10)
-	// 	d := s.r.GetInfo()
-	// 	if d != nil {
-	// 		s.updateIMs(d.IMs)
-	// 		s.updateUsers(d.Users)
-	// 		s.updateChannels(d.Channels, d.Groups)
-	// 		break
-	// 	}
-	// }
 
 	for e := range s.r.IncomingEvents {
 		switch d := e.Data.(type) {
@@ -578,8 +568,8 @@ func (s *Slk) Run() error {
 			s.updateChannels(nil, nil)
 
 		case *slack.TeamJoinEvent:
-			s.updateIMs(nil)
 			s.updateUsers(nil)
+			s.updateIMs(nil)
 
 		case *slack.IMCreatedEvent:
 			s.updateIMs(nil)
@@ -877,15 +867,23 @@ func (s *Slk) updateIMs(ims []slack.IM) error {
 		}
 	}
 
+	_ims := make(map[string]*slack.IM, len(ims))
+	_imsByUser := make(map[string]*slack.IM, len(ims))
+	for i := range ims {
+		_ims[ims[i].ID] = &ims[i]
+		_imsByUser[ims[i].User] = &ims[i]
+		u := s.getUser(ims[i].User)
+		u.lastRead = ims[i].LastRead
+		u.unread = ims[i].UnreadCount
+		if ims[i].Latest != nil {
+			u.latest = ims[i].Latest.Timestamp
+		}
+	}
+
 	s.Lock()
 	defer s.Unlock()
-
-	s.ims = make(map[string]*slack.IM, len(ims))
-	s.imsByUser = make(map[string]*slack.IM, len(ims))
-	for i := range ims {
-		s.ims[ims[i].ID] = &ims[i]
-		s.imsByUser[ims[i].User] = &ims[i]
-	}
+	s.ims = _ims
+	s.imsByUser = _imsByUser
 
 	return nil
 }

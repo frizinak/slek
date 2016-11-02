@@ -144,25 +144,43 @@ func (u *user) getLatest() string {
 }
 
 func slackChannelToChannel(c *slack.Channel) *channel {
-	return &channel{
+	ch := &channel{
 		id:        c.ID,
 		name:      c.Name,
 		creator:   c.Creator,
 		members:   c.Members,
 		isChannel: true,
 		isMember:  c.IsMember,
+
+		lastRead: c.LastRead,
+		unread:   c.UnreadCount,
 	}
+
+	if c.Latest != nil {
+		ch.latest = c.Latest.Timestamp
+	}
+
+	return ch
 }
 
 func slackGroupToChannel(g *slack.Group) *channel {
-	return &channel{
+	ch := &channel{
 		id:        g.ID,
 		name:      g.Name,
 		creator:   g.Creator,
 		members:   g.Members,
 		isChannel: false,
 		isMember:  true,
+
+		lastRead: g.LastRead,
+		unread:   g.UnreadCount,
 	}
+
+	if g.Latest != nil {
+		ch.latest = g.Latest.Timestamp
+	}
+
+	return ch
 }
 
 func slackUserToUser(u *slack.User) *user {

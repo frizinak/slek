@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/frizinak/slek/cmd/config"
@@ -189,8 +188,6 @@ func (s *slek) run() error {
 
 	slkErr := make(chan error, 0)
 
-	var init sync.Mutex
-	init.Lock()
 	go func() {
 		if err := s.c.Init(); err != nil {
 			slkErr <- err
@@ -205,7 +202,6 @@ func (s *slek) run() error {
 			s.c.Unread(e)
 		}
 
-		init.Unlock()
 		slkErr <- s.c.Run()
 	}()
 
@@ -259,11 +255,7 @@ func (s *slek) run() error {
 		}
 	}()
 
-	// We can't exit before starting slack.
-	s.t.Notice("Fetching metadata")
-	init.Lock()
-	s.t.Info("Fetched metadata")
-
+	s.t.Notice("Connecting...")
 	for {
 		select {
 		case err := <-slkErr:
