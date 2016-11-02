@@ -35,6 +35,8 @@ var (
 		{slk.ListItemStatusNone, "#room /u | /users:    : list online users in #room"},
 		{slk.ListItemStatusNone, "#room /au | /all-users: list all users in #room"},
 		{slk.ListItemStatusNone, "#room /p | /pins      : list pins of #room"},
+		{slk.ListItemStatusNone, "#room /f | /files     : list files of #room"},
+		{slk.ListItemStatusNone, "#room !path <comment> : upload file to #room"},
 
 		{slk.ListItemStatusTitle, "Listings"},
 		{slk.ListItemStatusNone, "users | u        : list online users"},
@@ -146,6 +148,9 @@ func (s *slek) entityCommand(e slk.Entity, args []string) bool {
 		return true
 	case "/p", "/pins":
 		s.c.Pins(e)
+		return true
+	case "/f", "/files":
+		s.c.Uploads(e)
 		return true
 	case "/u", "/users":
 		s.c.Members(e, true)

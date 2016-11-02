@@ -12,6 +12,8 @@ import (
 	"github.com/nlopes/slack"
 )
 
+const timeFormat = "02/01 15:04:05"
+
 // Slk abstracts a bunch of nlopes/slack calls and writes all output to
 // the given Output interface.
 // Handling of errors returned by Slk exposed methods is optional.
@@ -72,6 +74,51 @@ func (s *Slk) Init() error {
 		return err
 	}
 
+	return nil
+}
+
+// Uploads lists the first api page of uploads of the given entity.
+func (s *Slk) Uploads(e Entity) error {
+	var id string
+	switch e.GetType() {
+	case TypeUser:
+		id = s.getIMByUser(e.GetID()).ID
+	case TypeChannel:
+		id = e.GetID()
+	default:
+		err := fmt.Errorf("Can list uploads of a '%s'", e.GetType())
+		s.out.Warn(err.Error())
+		return err
+	}
+
+	p := slack.NewGetFilesParameters()
+	p.Channel = id
+	files, _, err := s.c.GetFiles(p)
+	if err != nil {
+		s.out.Warn(err.Error())
+		return err
+	}
+
+	items := make(ListItems, len(files)*2+1)
+	for i := range files {
+		from := s.getUser(files[i].User).GetQualifiedName()
+		items[i*2+1] = &ListItem{
+			ListItemStatusNormal,
+			fmt.Sprintf(
+				"%s: %s",
+				from,
+				files[i].Timestamp.Time().Format(timeFormat),
+			),
+		}
+		items[i*2+2] = &ListItem{ListItemStatusNone, files[i].URLPrivate}
+	}
+
+	items[0] = &ListItem{
+		ListItemStatusTitle,
+		fmt.Sprintf("files of %s", e.GetQualifiedName()),
+	}
+
+	s.out.List(items, false)
 	return nil
 }
 
@@ -328,7 +375,7 @@ func (s *Slk) Pins(e Entity) error {
 				fmt.Sprintf(
 					"%s: %s",
 					from.GetQualifiedName(),
-					timestamp.Format("02/01 15:04:05"),
+					timestamp.Format(timeFormat),
 				),
 			},
 		)
