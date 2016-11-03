@@ -46,4 +46,4 @@
 [ ] l-45:  wrap IM ?
 [ ] h:     recover from panic and try to gracefully shutdown termbox
 [x] h:     allow exit before having fetched metadata (e.g.: no internet = hang)
-[-] l:     style message (`backticks`, bold italic etc)
+[x] l:     style message (`backticks`, bold italic etc)

@@ -25,13 +25,49 @@ const (
 	colorBgYellow = "\033[1;30;43m"
 	colorBgGray   = "\033[1;30;47m"
 
+	colorBold   = "\033[1m"
+	colorItalic = "\033[32m"
+
 	colorReset = "\033[0m"
 )
 
 var (
 	reInlineCode = regexp.MustCompile("`([^`]+)`")
 	reCode       = regexp.MustCompile("(?s)\n?```(.*?)```\n?")
+
+	markups = []*markup{
+		&markup{
+			regexp.MustCompile("(^|\\s)_([^_]+)_(\\s|$)"),
+			string([]byte{1}),
+			string([]byte{2}),
+			// "$1\1$2\0$3", no idea why a string literal like
+			// that doesn't compile :\
+			string([]byte{36, 49, 1, 36, 50, 2, 36, 51}),
+			colorItalic,
+			"_",
+			"_",
+		},
+		&markup{
+			regexp.MustCompile("(^|\\s)\\*([^*]+)\\*(\\s|$)"),
+			string([]byte{3}),
+			string([]byte{4}),
+			string([]byte{36, 49, 3, 36, 50, 4, 36, 51}),
+			colorBold,
+			"*",
+			"*",
+		},
+	}
 )
+
+type markup struct {
+	re         *regexp.Regexp
+	prefixRepl string
+	suffixRepl string
+	repl       string
+	color      string
+	prefix     string
+	suffix     string
+}
 
 type msgPrefix struct {
 	channel string
@@ -77,11 +113,30 @@ func (t *format) Msg(
 		colorUser = colorBgGray
 	}
 
+	// TODO This is filthy, use a proper markdown parser or just
+	// ... better code.
+	// Anyway we replace the regexes with bytes < 10
+	// remove them if inside a code block or replace them with their
+	// respective colors.
+	for _, m := range markups {
+		msg = m.re.ReplaceAllString(msg, m.repl)
+	}
+
+	cleanMarkup := func(str string) string {
+		for _, m := range markups {
+			str = strings.Replace(str, m.prefixRepl, m.prefix, -1)
+			str = strings.Replace(str, m.suffixRepl, m.suffix, -1)
+		}
+
+		return str
+	}
+
 	msg = reCode.ReplaceAllStringFunc(
 		msg,
 		func(str string) string {
 			m := reCode.FindStringSubmatch(str)
-			lines := strings.Split(strings.Trim(m[1], "\n"), "\n")
+			str = cleanMarkup(strings.Trim(m[1], "\n"))
+			lines := strings.Split(str, "\n")
 			l := 0
 			for i := range lines {
 				if len(lines[i]) > l {
@@ -101,10 +156,18 @@ func (t *format) Msg(
 		},
 	)
 
-	msg = reInlineCode.ReplaceAllString(
+	msg = reInlineCode.ReplaceAllStringFunc(
 		msg,
-		fmt.Sprintf("%s$1%s", colorBgGray, colorReset),
+		func(str string) string {
+			str = cleanMarkup(str)
+			return colorBgGray + str[1:len(str)-1] + colorReset
+		},
 	)
+
+	for _, m := range markups {
+		msg = strings.Replace(msg, m.prefixRepl, m.color, -1)
+		msg = strings.Replace(msg, m.suffixRepl, colorReset, -1)
+	}
 
 	msg = strings.Trim(msg, "\n")
 
