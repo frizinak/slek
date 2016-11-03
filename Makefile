@@ -3,12 +3,17 @@ ASSET := cmd/slek/assets
 ASSETS := $(shell find $(ASSET)/assets -type f)
 CROSSARCH := amd64 386
 CROSSOS := darwin linux openbsd netbsd freebsd windows
-CROSS := $(foreach os,$(CROSSOS),$(foreach arch,$(CROSSARCH),dist/$(os).$(arch)))
+CROSS := $(foreach os,$(CROSSOS),$(foreach arch,$(CROSSARCH),$(os)/$(arch)))
 
 .PHONY: lint reset cross
 
-dist/slek: $(SRC) $(ASSET)/assets.go
-	go build -o $@ ./cmd/slek
+dist: $(SRC) $(ASSET)/assets.go
+	gox \
+		-osarch="$(CROSS)" \
+		-output="dist/{{.OS}}.{{.Arch}}" \
+		./cmd/slek
+
+	touch dist
 
 lint:
 	@- golint ./slk/...
@@ -17,15 +22,6 @@ lint:
 
 $(ASSET)/assets.go: $(ASSETS)
 	go-bindata -pkg assets -o $@ -prefix $(ASSET)/assets $(ASSET)/assets/...
-
-cross: $(CROSS)
-
-$(CROSS): $(SRC) cmd/slek/assets/assets.go
-	echo $@
-	gox \
-		-osarch=$(shell basename $@ | sed 's/\./\//') \
-		-output="dist/{{.OS}}.{{.Arch}}" \
-		./cmd/slek
 
 reset:
 	-rm -rf dist
