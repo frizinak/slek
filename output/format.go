@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -11,7 +13,7 @@ import (
 	"github.com/mitchellh/go-wordwrap"
 )
 
-var (
+const (
 	colorRed   = "\033[1;31m"
 	colorGreen = "\033[0;32m"
 	colorBlue  = "\033[1;34m"
@@ -24,6 +26,11 @@ var (
 	colorBgGray   = "\033[1;30;47m"
 
 	colorReset = "\033[0m"
+)
+
+var (
+	reInlineCode = regexp.MustCompile("`([^`]+)`")
+	reCode       = regexp.MustCompile("(?s)\n?```(.*?)```\n?")
 )
 
 type msgPrefix struct {
@@ -69,6 +76,37 @@ func (t *format) Msg(
 	if from == t.ownUsername {
 		colorUser = colorBgGray
 	}
+
+	msg = reCode.ReplaceAllStringFunc(
+		msg,
+		func(str string) string {
+			m := reCode.FindStringSubmatch(str)
+			lines := strings.Split(strings.Trim(m[1], "\n"), "\n")
+			l := 0
+			for i := range lines {
+				if len(lines[i]) > l {
+					l = len(lines[i])
+				}
+			}
+			for i := range lines {
+				lines[i] = fmt.Sprintf(" %-"+strconv.Itoa(l)+"s ", lines[i])
+			}
+
+			return fmt.Sprintf(
+				"\n%s%s%s\n",
+				colorBgGray,
+				strings.Join(lines, "\n"),
+				colorReset,
+			)
+		},
+	)
+
+	msg = reInlineCode.ReplaceAllString(
+		msg,
+		fmt.Sprintf("%s$1%s", colorBgGray, colorReset),
+	)
+
+	msg = strings.Trim(msg, "\n")
 
 	if section ||
 		t.lastPrefix == nil ||
