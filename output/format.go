@@ -36,35 +36,69 @@ var (
 	reCode       = regexp.MustCompile("(?s)\n?```(.*?)```\n?")
 
 	markups = []*markup{
+		// _italic_
 		&markup{
-			regexp.MustCompile("(^|\\s)_([^_]+)_(\\s|$)"),
-			string([]byte{1}),
-			string([]byte{2}),
-			// "$1\1$2\0$3", no idea why a string literal like
-			// that doesn't compile :\
-			string([]byte{36, 49, 1, 36, 50, 2, 36, 51}),
-			colorItalic,
-			"_",
-			"_",
+			re:         regexp.MustCompile("(^|\\s)_([^_]+)_(\\s|$)"),
+			repl:       "$1\001[1]$2\001[2]$3",
+			prefixRepl: "\001[1]",
+			suffixRepl: "\001[2]",
+			color:      colorItalic,
+			colorEnd:   colorReset,
+			prefix:     "_",
+			suffix:     "_",
 		},
+		// *bold*
 		&markup{
-			regexp.MustCompile("(^|\\s)\\*([^*]+)\\*(\\s|$)"),
-			string([]byte{3}),
-			string([]byte{4}),
-			string([]byte{36, 49, 3, 36, 50, 4, 36, 51}),
-			colorBold,
-			"*",
-			"*",
+			re:         regexp.MustCompile("(^|\\s)\\*([^*]+)\\*(\\s|$)"),
+			repl:       "$1\001[3]$2\001[4]$3",
+			prefixRepl: "\001[3]",
+			suffixRepl: "\001[4]",
+			color:      colorBold,
+			colorEnd:   colorReset,
+			prefix:     "*",
+			suffix:     "*",
+		},
+		// > quote
+		&markup{
+			re: regexp.MustCompile("(?s)(^|\n)(\\s*)>>>(.*)$"),
+			replFunc: func(m *markup, str string) string {
+				matches := m.re.FindStringSubmatch(str)
+				lines := strings.Split(matches[3], "\n")
+				for i := range lines {
+					lines[i] = "\001[5]\001[6]" + strings.TrimSpace(lines[i])
+				}
+
+				return matches[1] + matches[2] + strings.Join(lines, "\n")
+			},
+			prefixRepl: "\001[5]",
+			suffixRepl: "\001[6]",
+			color:      " " + colorBgGreen + " ",
+			colorEnd:   colorReset + " ",
+			prefix:     ">>>",
+			suffix:     "",
+		},
+		// >>> multiline quote
+		&markup{
+			re:         regexp.MustCompile("(?m)^(\001\\[5\\]\001\\[6\\])?(\\s*)>\\s?(.*)$"),
+			repl:       "$1\001[7]\001[8]$3",
+			prefixRepl: "\001[7]",
+			suffixRepl: "\001[8]",
+			color:      " " + colorBgGreen + " ",
+			colorEnd:   colorReset + " ",
+			prefix:     ">",
+			suffix:     "",
 		},
 	}
 )
 
 type markup struct {
 	re         *regexp.Regexp
+	repl       string
+	replFunc   func(*markup, string) string
 	prefixRepl string
 	suffixRepl string
-	repl       string
 	color      string
+	colorEnd   string
 	prefix     string
 	suffix     string
 }
@@ -115,10 +149,23 @@ func (t *format) Msg(
 
 	// TODO This is filthy, use a proper markdown parser or just
 	// ... better code.
-	// Anyway we replace the regexes with bytes < 10
+	// Anyway we replace the regexes with \001[\d]
 	// remove them if inside a code block or replace them with their
 	// respective colors.
 	for _, m := range markups {
+		if m.replFunc != nil {
+			msg = m.re.ReplaceAllStringFunc(
+				msg,
+				func(m *markup) func(str string) string {
+					return func(str string) string {
+						return m.replFunc(m, str)
+					}
+				}(m),
+			)
+
+			continue
+		}
+
 		msg = m.re.ReplaceAllString(msg, m.repl)
 	}
 
@@ -166,7 +213,7 @@ func (t *format) Msg(
 
 	for _, m := range markups {
 		msg = strings.Replace(msg, m.prefixRepl, m.color, -1)
-		msg = strings.Replace(msg, m.suffixRepl, colorReset, -1)
+		msg = strings.Replace(msg, m.suffixRepl, m.colorEnd, -1)
 	}
 
 	msg = strings.Trim(msg, "\n")
