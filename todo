@@ -49,3 +49,9 @@
 [x] l:     style message (`backticks`, bold italic etc)
 [ ] m:     @channel / @group / @everyone / @here notifications
 [x] m:     quote '>' and '>>>' formatting
+[-] l:     fix editor for multicol character input. e.g.: これはとてもこわれたです
+[ ] h:     52 unfixable without gocui full utf8 support,
+           character input is fixed along with arrowkeys.
+           but since gocui.View.Write is fubar:
+           no backspace / delete, no editor, no Term.SetInput. The latter of
+           those can be fixed by sending separate runes to output.editor.

@@ -629,7 +629,7 @@ func (t *Term) layout(g *gocui.Gui) error {
 func editor(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
 	switch {
 	case ch != 0 && mod == 0:
-		v.EditWrite(ch)
+		editWrite(v, ch)
 	case key == gocui.KeySpace:
 		v.EditWrite(' ')
 	case key == gocui.KeyBackspace || key == gocui.KeyBackspace2:
@@ -647,6 +647,19 @@ func editor(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
 	case key == gocui.KeyArrowRight:
 		move(v, 1, 0)
 	}
+
+}
+
+// Fixes gocui.View.EditWrite which doesn't take the actual width of
+// the character into account.
+func editWrite(v *gocui.View, ch rune) {
+	width := runewidth.RuneWidth(ch)
+	// v.EditWrite always moves the cursor one to the left.
+	diff := width - 1
+	v.EditWrite(ch)
+	if diff != 0 {
+		v.MoveCursor(diff, 0, true)
+	}
 }
 
 func move(v *gocui.View, dx, dy int) {
@@ -655,8 +668,7 @@ func move(v *gocui.View, dx, dy int) {
 	ox += orx
 	oy += ory
 
-	x := ox + dx
-	y := oy + dy
+	x, y := ox+dx, oy+dy
 
 	if x < 0 {
 		x = 0
@@ -666,6 +678,25 @@ func move(v *gocui.View, dx, dy int) {
 	}
 
 	line, _ := v.Line(y)
+	var col int
+	var prevCol int
+	for _, c := range line {
+		prevCol = col
+		col += runewidth.RuneWidth(c)
+		if dx > 0 {
+			if x <= col {
+				x = col
+				break
+			}
+			continue
+		}
+
+		if x < col {
+			x = prevCol
+			break
+		}
+	}
+
 	cols := runewidth.StringWidth(line)
 	if x > cols {
 		x = cols

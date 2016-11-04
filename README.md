@@ -56,3 +56,7 @@ GPL-3.0
 [mitchellh/go-wordwrap](https://github.com/mitchellh/go-wordwrap)  
 
 suet, mokit & freddi for running an untrusted binary on their macs.
+
+## Known issues
+
+see [todo](https://raw.github.com/frizinak/slek/master/todo)
