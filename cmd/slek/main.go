@@ -27,6 +27,7 @@ var (
 		{slk.ListItemStatusTitle, "General"},
 		{slk.ListItemStatusNone, "quit             : quit slek"},
 		{slk.ListItemStatusNone, "exit             : quit slek"},
+		{slk.ListItemStatusNone, "about            : about slek"},
 
 		{slk.ListItemStatusTitle, "Messages"},
 		{slk.ListItemStatusNone, "#room <msg>: send <msg>"},
@@ -102,6 +103,15 @@ func (s *slek) normalCommand(cmd string, args []string) bool {
 	switch cmd {
 	case "?", "h", "help", "/help":
 		s.t.List(help, false)
+	case "about":
+		about, err := assets.Asset("about")
+		if err != nil {
+			s.t.Warn(err.Error())
+			return true
+		}
+
+		s.t.Meta(string(about))
+		return true
 	case "quit", "exit":
 		s.quit <- true
 		return true

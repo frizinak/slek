@@ -1,3 +1,5 @@
 slk-debug.log
 .slek
 /dist/
+/build
+/cmd/slek/assets/assets/about

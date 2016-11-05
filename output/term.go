@@ -408,11 +408,15 @@ func (t *Term) Typing(channel, user string, timeout time.Duration) {
 
 func (t *Term) Debug(msg ...string) {
 	t.format.Debug(msg...)
-	//t.infoText(t.format.Debug(msg...))
 }
 
 func (t *Term) List(list slk.ListItems, reverse bool) {
 	t.infoText(t.format.List(list, reverse))
+}
+
+// Meta like List writes its output to the info view.
+func (t *Term) Meta(str string) {
+	t.infoText(str)
 }
 
 // GetInput returns the contents of the input field.
