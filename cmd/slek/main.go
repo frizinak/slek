@@ -12,11 +12,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/frizinak/gocui"
 	"github.com/frizinak/slek/cmd/config"
 	"github.com/frizinak/slek/cmd/slek/assets"
 	"github.com/frizinak/slek/output"
 	"github.com/frizinak/slek/slk"
-	"github.com/jroimartin/gocui"
 )
 
 var (

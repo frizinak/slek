@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/frizinak/gnotifier"
+	"github.com/frizinak/gocui"
 	"github.com/frizinak/slek/slk"
-	"github.com/jroimartin/gocui"
 	"github.com/mattn/go-runewidth"
 )
 
@@ -42,7 +42,7 @@ type Term struct {
 	// none of the update events are guaranteed to
 	// be excuted in order.
 	// Use a synchronization channel
-	gQueue              chan gocui.Handler
+	gQueue              chan func(*gocui.Gui) error
 	notifyChan          chan *notification
 	notificationLimit   time.Duration
 	notificationTimeout time.Duration
@@ -65,7 +65,7 @@ func NewTerm(
 	notificationTimeout time.Duration,
 ) (t *Term, input chan string) {
 	input = make(chan string, 1)
-	queue := make(chan gocui.Handler, 10) // Allow 10 recursive updates? :s
+	queue := make(chan func(*gocui.Gui) error, 10) // Allow 10 recursive updates? :s
 
 	t = &Term{
 		format:              format{ownUsername: username},
@@ -90,13 +90,10 @@ func NewTerm(
 
 // Init sets up the gocui / termbox environment.
 func (t *Term) Init() (err error) {
-	t.g = gocui.NewGui()
-
-	if err = t.g.Init(); err != nil {
+	if t.g, err = gocui.NewGui(); err != nil {
 		return
 	}
 
-	t.g.Editor = gocui.EditorFunc(editor)
 	t.g.Cursor = true
 
 	defer func() {
@@ -134,7 +131,7 @@ func (t *Term) Init() (err error) {
 		}
 	}()
 
-	t.g.SetLayout(t.layout)
+	t.g.SetManagerFunc(t.layout)
 
 	views := []string{viewInput, viewChat}
 	cview := 0
@@ -600,7 +597,8 @@ func (t *Term) layout(g *gocui.Gui) error {
 
 		v.Frame = true
 		v.Editable = true
-		v.Wrap = true
+		v.Wrap = false
+		v.Editor = gocui.EditorFunc(editor)
 	}
 
 	if v, err := g.SetView(viewEvent, 2, 0, maxX-1, 3); err != nil {
@@ -629,7 +627,7 @@ func (t *Term) layout(g *gocui.Gui) error {
 func editor(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
 	switch {
 	case ch != 0 && mod == 0:
-		editWrite(v, ch)
+		v.EditWrite(ch)
 	case key == gocui.KeySpace:
 		v.EditWrite(' ')
 	case key == gocui.KeyBackspace || key == gocui.KeyBackspace2:
@@ -650,18 +648,6 @@ func editor(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
 
 }
 
-// Fixes gocui.View.EditWrite which doesn't take the actual width of
-// the character into account.
-func editWrite(v *gocui.View, ch rune) {
-	width := runewidth.RuneWidth(ch)
-	// v.EditWrite always moves the cursor one to the left.
-	diff := width - 1
-	v.EditWrite(ch)
-	if diff != 0 {
-		v.MoveCursor(diff, 0, true)
-	}
-}
-
 func move(v *gocui.View, dx, dy int) {
 	orx, ory := v.Origin()
 	ox, oy := v.Cursor()
@@ -678,25 +664,6 @@ func move(v *gocui.View, dx, dy int) {
 	}
 
 	line, _ := v.Line(y)
-	var col int
-	var prevCol int
-	for _, c := range line {
-		prevCol = col
-		col += runewidth.RuneWidth(c)
-		if dx > 0 {
-			if x <= col {
-				x = col
-				break
-			}
-			continue
-		}
-
-		if x < col {
-			x = prevCol
-			break
-		}
-	}
-
 	cols := runewidth.StringWidth(line)
 	if x > cols {
 		x = cols

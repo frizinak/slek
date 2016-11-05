@@ -1,9 +1,6 @@
 [submodule "vendor/github.com/nlopes/slack"]
 	path = vendor/github.com/nlopes/slack
 	url = https://github.com/nlopes/slack
-[submodule "vendor/github.com/jroimartin/gocui"]
-	path = vendor/github.com/jroimartin/gocui
-	url = https://github.com/jroimartin/gocui
 [submodule "vendor/github.com/renstrom/fuzzysearch"]
 	path = vendor/github.com/renstrom/fuzzysearch
 	url = https://github.com/renstrom/fuzzysearch
@@ -22,3 +19,6 @@
 [submodule "vendor/github.com/mitchellh/go-wordwrap"]
 	path = vendor/github.com/mitchellh/go-wordwrap
 	url = https://github.com/mitchellh/go-wordwrap
+[submodule "vendor/github.com/frizinak/gocui"]
+	path = vendor/github.com/frizinak/gocui
+	url = https://github.com/frizinak/gocui
