@@ -164,7 +164,7 @@ func (s *Slk) Upload(e Entity, filepath, title, comment string) chan error {
 		p.InitialComment = comment
 	}
 
-	s.out.Info(
+	s.out.Notice(
 		fmt.Sprintf(
 			"Starting upload of %s to %s",
 			filepath,
@@ -177,6 +177,14 @@ func (s *Slk) Upload(e Entity, filepath, title, comment string) chan error {
 		_, err := s.c.UploadFile(p)
 		if err != nil {
 			s.out.Warn(err.Error())
+		} else {
+			s.out.Info(
+				fmt.Sprintf(
+					"Uploaded %s to %s",
+					filepath,
+					e.GetQualifiedName(),
+				),
+			)
 		}
 		ch <- err
 	}()
