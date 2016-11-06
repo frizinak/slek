@@ -41,7 +41,7 @@ func (s *slek) fuzzyPath(prefix, query, suffix string) string {
 
 	}
 
-	if os.IsNotExist(err) || stat.IsDir() {
+	if os.IsNotExist(err) || (stat != nil && stat.IsDir()) {
 		fpath = strings.TrimRight(fpath, ps)
 		base := path.Base(fpath)
 		fpath = path.Dir(fpath)
