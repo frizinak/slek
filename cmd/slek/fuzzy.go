@@ -125,15 +125,15 @@ func (s *slek) fuzzy(
 
 	if len(opts) == 1 {
 		// autocomplete and bail
-		s.t.SetInput(opts[0].GetQualifiedName()+" ", -1, -1, false)
+		s.t.SetInput(opts[0].QualifiedName()+" ", -1, -1, false)
 		return opts[0]
 	}
 
 	for i := range opts {
 		// multiple matches
-		if query == opts[i].GetName() {
+		if query == opts[i].Name() {
 			s.t.SetInput(
-				opts[0].GetQualifiedName()+" ",
+				opts[0].QualifiedName()+" ",
 				-1,
 				-1,
 				false,
@@ -147,7 +147,7 @@ func (s *slek) fuzzy(
 	} else if len(opts) > 1 {
 		names := make([]string, 0, len(opts))
 		for i := range opts {
-			names = append(names, opts[i].GetName())
+			names = append(names, opts[i].Name())
 		}
 		s.t.Notice(
 			fmt.Sprintf(
@@ -156,7 +156,7 @@ func (s *slek) fuzzy(
 			),
 		)
 
-		trgt := opts[0].GetQualifiedName()
+		trgt := opts[0].QualifiedName()
 		s.t.SetInput(
 			fmt.Sprintf("%s %s", trgt, trimFields(args)),
 			runewidth.StringWidth(trgt),

@@ -48,14 +48,14 @@ func (s *Slk) parseTextIncoming(texts ...string) (parsed string, mentions []stri
 				var entity Entity
 				switch m[1] {
 				case "@":
-					entity = s.getUser(m[2])
+					entity = s.user(m[2])
 				case "#":
-					entity = s.getChannel(m[2])
+					entity = s.channel(m[2])
 				}
 
 				if !entity.IsNil() {
-					mentions = append(mentions, entity.GetName())
-					return entity.GetQualifiedName()
+					mentions = append(mentions, entity.Name())
+					return entity.QualifiedName()
 				}
 
 				return str

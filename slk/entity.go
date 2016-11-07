@@ -41,109 +41,71 @@ type EntityType string
 
 // Entity abstracts users, groups and channels
 type Entity interface {
-	GetID() string
-	GetName() string
-	GetQualifiedName() string
-	GetType() EntityType
-	GetUnreadCount() int
+	ID() string
+	Name() string
+	QualifiedName() string
+	Type() EntityType
+	UnreadCount() int
 	IsActive() bool
 	IsNil() bool
-	getLastRead() string
-	getLatest() string
+
+	lastRead() string
+	latest() string
+
+	setLastRead(string)
+	setLatest(string)
+	incrementUnread()
+	resetUnread()
 }
 
 type channel struct {
-	id        string
-	name      string
-	creator   string
-	members   []string
-	isChannel bool
-	isMember  bool
-	unread    int
-	lastRead  string
-	latest    string
+	id         string
+	name       string
+	creator    string
+	members    []string
+	isChannel  bool
+	isMember   bool
+	unread     int
+	lastReadTs string
+	latestTs   string
 }
 
-func (c *channel) GetID() string {
-	return c.id
-}
-
-func (c *channel) GetName() string {
-	return c.name
-}
-
-func (c *channel) GetQualifiedName() string {
-	return "#" + c.name
-}
-
-func (c *channel) GetType() EntityType {
-	return TypeChannel
-}
-
-func (c *channel) GetUnreadCount() int {
-	return c.unread
-}
-
-func (c *channel) IsActive() bool {
-	return c.isMember
-}
-
-func (c *channel) IsNil() bool {
-	return c.GetID() == nilID
-}
-
-func (c *channel) getLastRead() string {
-	return c.lastRead
-}
-
-func (c *channel) getLatest() string {
-	return c.latest
-}
+func (c *channel) ID() string            { return c.id }
+func (c *channel) Name() string          { return c.name }
+func (c *channel) QualifiedName() string { return "#" + c.name }
+func (c *channel) Type() EntityType      { return TypeChannel }
+func (c *channel) UnreadCount() int      { return c.unread }
+func (c *channel) IsActive() bool        { return c.isMember }
+func (c *channel) IsNil() bool           { return c.id == nilID }
+func (c *channel) lastRead() string      { return c.lastReadTs }
+func (c *channel) latest() string        { return c.latestTs }
+func (c *channel) setLastRead(l string)  { c.lastReadTs = l }
+func (c *channel) setLatest(l string)    { c.latestTs = l }
+func (c *channel) incrementUnread()      { c.unread++ }
+func (c *channel) resetUnread()          { c.unread = 0 }
 
 type user struct {
 	*slack.User
-	unread   int
-	lastRead string
-	latest   string
+	unread     int
+	lastReadTs string
+	latestTs   string
 }
 
-func (u *user) GetID() string {
-	return u.ID
-}
+func (u *user) ID() string            { return u.User.ID }
+func (u *user) Name() string          { return u.User.Name }
+func (u *user) QualifiedName() string { return "@" + u.User.Name }
+func (u *user) Type() EntityType      { return TypeUser }
+func (u *user) UnreadCount() int      { return u.unread }
+func (u *user) IsActive() bool        { return u.Presence == userPresenceActive }
+func (u *user) IsNil() bool           { return u.User.ID == nilID }
+func (u *user) lastRead() string      { return u.lastReadTs }
+func (u *user) latest() string        { return u.latestTs }
+func (u *user) setLastRead(l string)  { u.lastReadTs = l }
+func (u *user) setLatest(l string)    { u.latestTs = l }
+func (u *user) incrementUnread()      { u.unread++ }
+func (u *user) resetUnread()          { u.unread = 0 }
 
-func (u *user) GetName() string {
-	return u.Name
-}
-
-func (u *user) GetQualifiedName() string {
-	return "@" + u.Name
-}
-
-func (u *user) GetType() EntityType {
-	return TypeUser
-}
-
-func (u *user) GetUnreadCount() int {
-	return u.unread
-}
-
-func (u *user) IsActive() bool {
-	return u.Presence == userPresenceActive
-}
-
-func (u *user) IsNil() bool {
-	return u.GetID() == nilID
-}
-
-func (u *user) getLastRead() string {
-	return u.lastRead
-}
-
-func (u *user) getLatest() string {
-	return u.latest
-}
-
-func slackChannelToChannel(c *slack.Channel) *channel {
+func slackChannelToChannel(c *slack.Channel, original *channel) *channel {
 	ch := &channel{
 		id:        c.ID,
 		name:      c.Name,
@@ -152,18 +114,24 @@ func slackChannelToChannel(c *slack.Channel) *channel {
 		isChannel: true,
 		isMember:  c.IsMember,
 
-		lastRead: c.LastRead,
-		unread:   c.UnreadCount,
+		lastReadTs: c.LastRead,
+		unread:     c.UnreadCount,
 	}
 
 	if c.Latest != nil {
-		ch.latest = c.Latest.Timestamp
+		ch.latestTs = c.Latest.Timestamp
+	}
+
+	if original != nil && !original.IsNil() && ch.lastReadTs == "" {
+		ch.lastReadTs = original.lastReadTs
+		ch.latestTs = original.latestTs
+		ch.unread = original.unread
 	}
 
 	return ch
 }
 
-func slackGroupToChannel(g *slack.Group) *channel {
+func slackGroupToChannel(g *slack.Group, original *channel) *channel {
 	ch := &channel{
 		id:        g.ID,
 		name:      g.Name,
@@ -172,19 +140,31 @@ func slackGroupToChannel(g *slack.Group) *channel {
 		isChannel: false,
 		isMember:  true,
 
-		lastRead: g.LastRead,
-		unread:   g.UnreadCount,
+		lastReadTs: g.LastRead,
+		unread:     g.UnreadCount,
 	}
 
 	if g.Latest != nil {
-		ch.latest = g.Latest.Timestamp
+		ch.latestTs = g.Latest.Timestamp
+	}
+
+	if original != nil && !original.IsNil() && ch.lastReadTs == "" {
+		ch.lastReadTs = original.lastReadTs
+		ch.latestTs = original.latestTs
+		ch.unread = original.unread
 	}
 
 	return ch
 }
 
-func slackUserToUser(u *slack.User) *user {
+func slackUserToUser(u *slack.User, original *user) *user {
 	usr := &user{User: u}
+
+	if original != nil && !original.IsNil() && usr.lastReadTs == "" {
+		usr.lastReadTs = original.lastReadTs
+		usr.latestTs = original.latestTs
+		usr.unread = original.unread
+	}
 
 	return usr
 }

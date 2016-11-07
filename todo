@@ -1,5 +1,5 @@
-[ ] h:     maintain Latest and LastRead between channel, group and im updates
-[ ] m:     mark last received message in channels and ims (queued)
+[-] h:     maintain Latest and LastRead between channel, group and im updates
+[x] m:     mark last received message in channels and ims (queued)
 [-] m:     vim navigation in box (hjkl / ud)
 [-] l:     vim mode in input / editor command
 [x] m:     generic commands
