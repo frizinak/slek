@@ -55,4 +55,4 @@
            but since gocui.View.Write is fubar:
            no backspace / delete, no editor, no Term.SetInput. The latter of
            those can be fixed by sending separate runes to output.editor.
-[ ] h:     fix filepath completion and upload on windows, also fuzzy panics.
+[x] h:     fix filepath completion and upload on windows, also fuzzy panics.

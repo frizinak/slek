@@ -60,3 +60,7 @@ suet, mokit & freddi for running an untrusted binary on their macs.
 ## Known issues
 
 see [todo](https://raw.github.com/frizinak/slek/master/todo)
+
+## Dev / contrib notes
+
+The dev branch *will* be rebased, best stay clear ;)
