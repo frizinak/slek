@@ -156,7 +156,7 @@ func (s *slek) entityCommand(e slk.Entity, args []string) bool {
 
 		comment := trimFields(args)
 		path := s.fuzzyPath(
-			e.GetQualifiedName()+" !",
+			e.QualifiedName()+" !",
 			query,
 			comment,
 		)
@@ -200,7 +200,7 @@ func (s *slek) entityCommand(e slk.Entity, args []string) bool {
 		s.c.Leave(e)
 		return true
 	case "/e":
-		s.editor(e.GetQualifiedName() + " ")
+		s.editor(e.QualifiedName() + " ")
 		return true
 	}
 
@@ -230,7 +230,7 @@ func (s *slek) run() error {
 			slkErr <- err
 			return
 		}
-		s.t.SetUsername(s.c.GetUsername())
+		s.t.SetUsername(s.c.Username())
 
 		s.t.Notice("Fetching history...")
 		for _, e := range s.c.Joined() {
@@ -277,7 +277,7 @@ func (s *slek) run() error {
 			}
 
 			s.t.SetInput(
-				fmt.Sprintf("%s%s ", string(cmd[0]), e.GetName()),
+				fmt.Sprintf("%s%s ", string(cmd[0]), e.Name()),
 				-1,
 				-1,
 				false,
