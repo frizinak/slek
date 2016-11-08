@@ -506,7 +506,7 @@ func (s *Slk) List(entityType EntityType, relevantOnly bool) error {
 
 // Members writes a list of members of the given channel or group to the
 // Output interface.
-func (s *Slk) Members(e Entity, relevanOnly bool) error {
+func (s *Slk) Members(e Entity, relevantOnly bool) error {
 	channel, ok := e.(*channel)
 	if !ok {
 		err := fmt.Errorf("Can't list members of a %s", e.Type())
@@ -519,7 +519,7 @@ func (s *Slk) Members(e Entity, relevanOnly bool) error {
 		user := s.user(channel.members[i])
 		status := ListItemStatusGood
 		if !user.IsActive() {
-			if relevanOnly {
+			if relevantOnly {
 				continue
 			}
 
