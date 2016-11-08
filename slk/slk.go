@@ -793,23 +793,28 @@ func (s *Slk) handleEvent(event slack.RTMEvent) error {
 		}
 		// TODO lookup which preferences are relevant to slek.
 		s.out.Debug(event.Type, d.Name, string(d.Value))
+
+	case *slack.DisconnectedEvent:
+		if !d.Intentional {
+			s.out.Warn("Disconnected! Reconnecting...")
+		}
 	case *slack.ConnectingEvent:
-		s.out.Info("Connecting")
+		s.out.Notice("Connecting...")
 	case *slack.ConnectedEvent:
-		s.out.Info("Connected!")
+		s.out.Notice("Connected!")
 	case *slack.HelloEvent:
-		s.out.Info("Slack: hello!")
+		s.out.Notice("Slack: hello!")
 
 	case *slack.FilePublicEvent:
 		// TODO ignorable? slack.MessageEvent seems to suffice
 		s.out.Debug(d.Type, fmt.Sprintf("%+v", d.File))
 		// Ignore
+
+	// Ignores
+	case *slack.ChannelMarkedEvent:
 	case *slack.IMMarkedEvent:
-		// Ignore
 	case *slack.LatencyReport:
-		// Ignore
 	case *slack.ReconnectUrlEvent:
-		// Ignore
 	default:
 		// TODO
 		s.out.Debug(event.Type, reflect.TypeOf(event.Data).String())
