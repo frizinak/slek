@@ -32,9 +32,14 @@ func main() {
 		stderr.Fatal(err)
 	}
 
-	t := output.NewStdout("")
+	if conf.TimeFormat == "" {
+		conf.TimeFormat = "Jan 02 15:04:05"
+	}
+
+	t := output.NewStdout("", conf.TimeFormat)
 	c := slk.NewSlk(
 		conf.Token,
+		conf.TimeFormat,
 		t,
 	)
 

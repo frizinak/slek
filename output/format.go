@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/frizinak/slek/slk"
+	runewidth "github.com/mattn/go-runewidth"
 	"github.com/mitchellh/go-wordwrap"
 )
 
@@ -111,6 +112,7 @@ type msgPrefix struct {
 
 type format struct {
 	ownUsername string
+	timeFormat  string
 	lastPrefix  *msgPrefix
 }
 
@@ -222,26 +224,30 @@ func (t *format) Msg(
 		math.Abs(ts.Sub(t.lastPrefix.ts).Seconds()) > float64(time.Minute*5) {
 
 		prefix := ""
+		header := fmt.Sprintf(
+			"\n%s %-18s %s %s",
+			colorUser,
+			fmt.Sprintf("%s:", from),
+			colorReset,
+			ts.Format(t.timeFormat),
+		)
+
 		if section || t.lastPrefix == nil || t.lastPrefix.channel != channel {
+			l := runewidth.StringWidth(header) -
+				runewidth.StringWidth(colorUser) -
+				runewidth.StringWidth(colorReset) - 2
 			prefix = fmt.Sprintf(
-				"\n%s %-34s%s",
+				"\n%s %-"+strconv.Itoa(l)+"s%s",
 				colorBgGreen,
 				channel,
 				colorReset,
 			)
 		}
 
-		prefix += fmt.Sprintf(
-			"\n%s %-18s %s %s",
-			colorUser,
-			fmt.Sprintf("%s:", from),
-			colorReset,
-			ts.Format("02/01 15:04:05"),
-		)
-
 		msg = fmt.Sprintf(
-			"%s\n%s",
+			"%s%s\n%s",
 			prefix,
+			header,
 			msg,
 		)
 	}

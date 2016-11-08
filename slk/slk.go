@@ -11,23 +11,27 @@ import (
 	"github.com/nlopes/slack"
 )
 
-const timeFormat = "02/01 15:04:05"
-
 // Slk abstracts a bunch of nlopes/slack calls and writes all output to
 // the given Output interface.
 //
 // Handling of errors returned by Slk exposed methods is optional.
 // Except for Init and Run.
 type Slk struct {
-	out      Output
-	username string
+	out        Output
+	username   string
+	timeFormat string
+
 	*sync.RWMutex
-	active         Entity
-	markRead       chan Entity
-	quit           chan error
-	token          string
-	c              *slack.Client
-	r              *slack.RTM
+
+	active   Entity
+	markRead chan Entity
+	quit     chan error
+
+	token string
+
+	c *slack.Client
+	r *slack.RTM
+
 	users          map[string]*user
 	usersByName    map[string]*user
 	channels       map[string]*channel
@@ -37,12 +41,13 @@ type Slk struct {
 }
 
 // NewSlk returns a new Slk 'engine'.
-func NewSlk(token string, output Output) *Slk {
+func NewSlk(token, timeFormat string, output Output) *Slk {
 	var rw sync.RWMutex
 
 	return &Slk{
 		output,
 		"",
+		timeFormat,
 		&rw,
 		nil,
 		make(chan Entity, 1),
@@ -132,7 +137,7 @@ func (s *Slk) Uploads(e Entity) error {
 			fmt.Sprintf(
 				"%s: %s",
 				from,
-				files[i].Timestamp.Time().Format(timeFormat),
+				files[i].Timestamp.Time().Format(s.timeFormat),
 			),
 		}
 		items[i*2+2] = &ListItem{ListItemStatusNone, files[i].URLPrivate}
@@ -408,7 +413,7 @@ func (s *Slk) Pins(e Entity) error {
 				fmt.Sprintf(
 					"%s: %s",
 					from.QualifiedName(),
-					timestamp.Format(timeFormat),
+					timestamp.Format(s.timeFormat),
 				),
 			},
 		)

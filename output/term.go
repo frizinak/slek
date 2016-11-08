@@ -66,6 +66,7 @@ func NewTerm(
 	appName,
 	appIcon,
 	username string,
+	timeFormat string,
 	notificationLimit time.Duration,
 	notificationTimeout time.Duration,
 ) (t *Term, input chan string) {
@@ -73,7 +74,10 @@ func NewTerm(
 	queue := make(chan func(*gocui.Gui) error, 10) // Allow 10 recursive updates? :s
 
 	t = &Term{
-		format:              format{ownUsername: username},
+		format: format{
+			ownUsername: username,
+			timeFormat:  timeFormat,
+		},
 		appName:             appName,
 		appIcon:             appIcon,
 		input:               input,

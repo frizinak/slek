@@ -20,7 +20,8 @@ type Config struct {
 	Token     string `json:"token"`
 	EditorCmd string `json:"editor"`
 	// TODO interface type switch, strconv.Atoi if not an int.
-	NotificationTimeout int `json:"notification_timeout"`
+	NotificationTimeout int    `json:"notification_timeout"`
+	TimeFormat          string `json:"time_format"`
 }
 
 func createConfig(path string) error {
@@ -36,7 +37,8 @@ func createConfig(path string) error {
 	_, err = f.WriteString(`{
     "token":    "-",
     "editor":   "",
-	"notification_timeout": 2500
+	"notification_timeout": 2500,
+	"time_format": "Jan 02 15:04:05"
 }`)
 
 	return err

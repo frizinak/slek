@@ -95,11 +95,19 @@ type slek struct {
 	quit      chan bool
 }
 
-func newSlek(token, editorCmd string, ntfy time.Duration) *slek {
+func newSlek(token, tFormat, editorCmd string, ntfy time.Duration) *slek {
 
-	t, input := output.NewTerm("slek", getIcon(), "", time.Second*5, ntfy)
+	t, input := output.NewTerm(
+		"slek",
+		getIcon(),
+		"",
+		tFormat,
+		time.Second*5,
+		ntfy,
+	)
 	c := slk.NewSlk(
 		token,
+		tFormat,
 		t,
 	)
 
@@ -347,9 +355,12 @@ func main() {
 	if conf.NotificationTimeout == 0 {
 		conf.NotificationTimeout = 2500
 	}
+	if conf.TimeFormat == "" {
+		conf.TimeFormat = "Jan 02 15:04:05"
+	}
 
 	ntfy := time.Duration(conf.NotificationTimeout * 1e6)
-	err = newSlek(conf.Token, conf.EditorCmd, ntfy).run()
+	err = newSlek(conf.Token, conf.TimeFormat, conf.EditorCmd, ntfy).run()
 	if err != nil {
 		stderr.Fatal(err)
 	}

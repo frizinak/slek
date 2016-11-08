@@ -20,8 +20,8 @@ type Stdout struct {
 }
 
 // NewStdout returns an Stdout
-func NewStdout(username string) *Stdout {
-	return &Stdout{format{ownUsername: username}}
+func NewStdout(username, timeFormat string) *Stdout {
+	return &Stdout{format{ownUsername: username, timeFormat: timeFormat}}
 }
 
 // SetUsername sets the current user's name so the formatter can make it

@@ -30,11 +30,15 @@ optional: editor vim:
 - `nvim +'set syntax=' +'startinsert!' {}` start vim/neovim without syntax
 highlighting, start in (A)ppend mode and open tempfile {}  
 
+[time format spec](https://golang.org/pkg/time/#pkg-constants)
+
+
 ```
 {
     "token":    "abcd-token",
     "editor":   "st -c float -e nvim +'set syntax=' +'startinsert!' {}",
-    "notification_timeout": 8000
+    "notification_timeout": 8000,
+	"time_format": "Jan 02 15:04:05"
 }
 
 ```
