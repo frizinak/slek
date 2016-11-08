@@ -49,3 +49,33 @@ func (s *Slk) invite(chn, user Entity) error {
 
 	return err
 }
+
+// Mark the last read message in an IM, channel or group.
+func (s *Slk) mark(e Entity) error {
+	var err error
+
+	latest := e.latest()
+	switch e.Type() {
+	case TypeChannel:
+		if e.(*channel).isChannel {
+			err = s.c.SetChannelReadMark(e.ID(), latest)
+			latest = e.latest()
+			break
+		}
+
+		err = s.c.SetGroupReadMark(e.ID(), latest)
+	case TypeUser:
+		err = s.c.MarkIMChannel(s.imByUser(e.ID()).ID, latest)
+	default:
+		err = fmt.Errorf("Can't mark a %s", e.Type())
+	}
+
+	if err != nil {
+		s.out.Warn(err.Error())
+		return err
+	}
+
+	e.setLastRead(latest)
+
+	return nil
+}
