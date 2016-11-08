@@ -28,6 +28,7 @@ var (
 		{slk.ListItemStatusNone, "quit             : quit slek"},
 		{slk.ListItemStatusNone, "exit             : quit slek"},
 		{slk.ListItemStatusNone, "about            : about slek"},
+		{slk.ListItemStatusNone, "clear            : clear the chat screen"},
 
 		{slk.ListItemStatusTitle, "Messages"},
 		{slk.ListItemStatusNone, "#room <msg>: send <msg>"},
@@ -114,6 +115,9 @@ func (s *slek) normalCommand(cmd string, args []string) bool {
 		return true
 	case "quit", "exit":
 		s.quit <- true
+		return true
+	case "clear":
+		s.t.Clear()
 		return true
 	case "channels", "c":
 		s.c.List(slk.TypeChannel, true)
