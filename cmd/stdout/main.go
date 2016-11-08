@@ -42,7 +42,7 @@ func main() {
 		panic(err)
 	}
 
-	t.SetUsername(c.GetUsername())
+	t.SetUsername(c.Username())
 
 	if err := c.Run(); err != nil {
 		panic(err)

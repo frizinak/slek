@@ -250,7 +250,7 @@ func (s *slek) run() error {
 	}
 
 	s.t.BindKey(gocui.KeyCtrlE, func() error {
-		s.editor(s.t.GetInput())
+		s.editor(s.t.Input())
 		return nil
 	})
 
