@@ -263,6 +263,8 @@ func (s *Slk) Switch(e Entity) error {
 		return err
 	}
 
+	s.out.Info(e.QualifiedName())
+
 	return nil
 }
 
