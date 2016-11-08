@@ -47,12 +47,17 @@ type Term struct {
 	notificationLimit   time.Duration
 	notificationTimeout time.Duration
 
-	clearEventMutex sync.Mutex
-	clearEventBox   *time.Time
-	boxWidth        uint
-	infoWidth       uint
-	typingWidth     uint
-	views           []*view
+	clearTypingMutex sync.Mutex
+	clearTypingBox   *time.Time
+
+	resetEventMutex sync.Mutex
+	resetEventBox   *time.Time
+	eventBoxCache   string
+
+	boxWidth    uint
+	infoWidth   uint
+	typingWidth uint
+	views       []*view
 }
 
 // NewTerm returns a Term and an input channel which will receive the current
@@ -307,25 +312,44 @@ func (t *Term) Run() error {
 
 	go t.update()
 
+	// TODO Quit should cancel these:
 	go func() {
 		for {
-			t.clearEventMutex.Lock()
+			t.clearTypingMutex.Lock()
 			now := time.Now()
-			clear := t.clearEventBox != nil && t.clearEventBox.Before(now)
+			clear := t.clearTypingBox != nil && t.clearTypingBox.Before(now)
 			if !clear {
-				t.clearEventMutex.Unlock()
+				t.clearTypingMutex.Unlock()
 				time.Sleep(time.Millisecond * 200)
 				continue
 			}
 
-			t.clearEventBox = nil
-			t.clearEventMutex.Unlock()
+			t.clearTypingBox = nil
+			t.clearTypingMutex.Unlock()
 
 			t.gQueue <- func(g *gocui.Gui) error {
 				v, _ := g.View(viewTyping)
 				v.Clear()
 				return nil
 			}
+		}
+	}()
+
+	go func() {
+		for {
+			t.resetEventMutex.Lock()
+			now := time.Now()
+			reset := t.resetEventBox != nil && t.resetEventBox.Before(now)
+			if !reset {
+				t.resetEventMutex.Unlock()
+				time.Sleep(time.Millisecond * 200)
+				continue
+			}
+
+			t.resetEventBox = nil
+			t.resetEventMutex.Unlock()
+
+			t.eventText(t.eventBoxCache, 0)
 		}
 	}()
 
@@ -383,15 +407,15 @@ func (t *Term) Notify(channel, from, text string, force bool) {
 }
 
 func (t *Term) Info(msg string) {
-	t.eventText(t.format.Info(msg))
+	t.eventText(t.format.Info(msg), 0)
 }
 
 func (t *Term) Notice(msg string) {
-	t.eventText(t.format.Notice(msg))
+	t.eventText(t.format.Notice(msg), time.Second*3)
 }
 
 func (t *Term) Warn(msg string) {
-	t.eventText(t.format.Warn(msg))
+	t.eventText(t.format.Warn(msg), time.Second*3)
 }
 
 func (t *Term) Msg(channel, from, msg string, ts time.Time, section bool) {
@@ -563,16 +587,27 @@ func (t *Term) infoText(msg string) {
 	t.text(viewInfo, msg, t.infoWidth, true)
 }
 
-func (t *Term) eventText(msg string) {
+func (t *Term) eventText(msg string, timeout time.Duration) {
+	if timeout == 0 {
+		t.eventBoxCache = msg
+	} else {
+		at := time.Now().Add(timeout)
+		t.resetEventMutex.Lock()
+		defer t.resetEventMutex.Unlock()
+		if t.resetEventBox == nil || t.resetEventBox.Before(at) {
+			t.resetEventBox = &at
+		}
+	}
+
 	t.text(viewEvent, msg, 0, true)
 }
 
 func (t *Term) typingText(msg string, timeout time.Duration) {
 	at := time.Now().Add(timeout)
-	t.clearEventMutex.Lock()
-	defer t.clearEventMutex.Unlock()
-	if t.clearEventBox == nil || t.clearEventBox.Before(at) {
-		t.clearEventBox = &at
+	t.clearTypingMutex.Lock()
+	defer t.clearTypingMutex.Unlock()
+	if t.clearTypingBox == nil || t.clearTypingBox.Before(at) {
+		t.clearTypingBox = &at
 	}
 
 	t.text(viewTyping, msg, t.typingWidth, true)
