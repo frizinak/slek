@@ -419,8 +419,8 @@ func (t *Term) Meta(str string) {
 	t.infoText(str)
 }
 
-// GetInput returns the contents of the input field.
-func (t *Term) GetInput() string {
+// Input returns the contents of the input field.
+func (t *Term) Input() string {
 	v, _ := t.g.View(viewInput)
 	return v.Buffer()
 }
