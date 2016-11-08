@@ -425,6 +425,19 @@ func (t *Term) Input() string {
 	return v.Buffer()
 }
 
+// Clear the chat view
+func (t *Term) Clear() {
+	t.gQueue <- func(g *gocui.Gui) error {
+		v, err := g.View(viewChat)
+		if err != nil {
+			return err
+		}
+
+		v.Clear()
+		return nil
+	}
+}
+
 // SetInput overwrites the current input field and sets the cursor
 // to posX x posY.
 //
