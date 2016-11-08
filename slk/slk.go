@@ -346,7 +346,6 @@ func (s *Slk) History(e Entity, amount int) error {
 		return err
 	}
 
-	s.out.Notice(fmt.Sprintf("%+v %s", done, latest))
 	if done {
 		e.setLatest(latest)
 		s.markRead <- e
@@ -844,7 +843,6 @@ func (s *Slk) mark(e Entity) error {
 		return err
 	}
 
-	s.out.Notice(fmt.Sprintf("marked %s %s", e.QualifiedName(), time.Now().String()))
 	e.resetUnread()
 	e.setLastRead(latest)
 
