@@ -23,6 +23,7 @@ type Slk struct {
 	out      Output
 	username string
 	*sync.RWMutex
+	active         Entity
 	markRead       chan Entity
 	quit           chan error
 	token          string
@@ -44,6 +45,7 @@ func NewSlk(token string, output Output) *Slk {
 		output,
 		"",
 		&rw,
+		nil,
 		make(chan Entity, 1),
 		make(chan error, 0),
 		token,
@@ -250,6 +252,20 @@ func (s *Slk) Joined() []Entity {
 	return joined
 }
 
+// Switch to the given entity and fetch unread history.
+func (s *Slk) Switch(e Entity) error {
+	if e.Is(s.active) {
+		return nil
+	}
+
+	s.active = e
+	if err := s.Unread(e); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // IMs returns a list of users you have intiated an IM channel with.
 func (s *Slk) IMs() []Entity {
 	users := make([]Entity, 0)
@@ -437,6 +453,59 @@ func (s *Slk) Fuzzy(entityType EntityType, query string) []Entity {
 	}
 
 	return fuzzySearch(query, lookup)
+}
+
+// ListUnread writes a list of entities with unread messages to the Output.
+func (s *Slk) ListUnread() error {
+	s.RLock()
+	defer s.RUnlock()
+
+	userList := make(ListItems, 0)
+	channelList := make(ListItems, 0)
+
+	for i := range s.users {
+		if s.users[i].UnreadCount() != 0 {
+			userList = append(
+				userList,
+				&ListItem{
+					ListItemStatusNormal,
+					fmt.Sprintf(
+						"%-18s [%d]",
+						s.users[i].QualifiedName(),
+						s.users[i].UnreadCount(),
+					),
+				},
+			)
+		}
+	}
+
+	for i := range s.channels {
+		if s.channels[i].UnreadCount() != 0 {
+			channelList = append(
+				channelList,
+				&ListItem{
+					ListItemStatusNormal,
+					fmt.Sprintf(
+						"%-18s [%d]",
+						s.channels[i].QualifiedName(),
+						s.channels[i].UnreadCount(),
+					),
+				},
+			)
+		}
+	}
+
+	sort.Sort(userList)
+	sort.Sort(channelList)
+
+	list := make(ListItems, 0, len(userList)+len(channelList)+2)
+	list = append(list, &ListItem{ListItemStatusTitle, "Users:"})
+	list = append(list, userList...)
+	list = append(list, &ListItem{ListItemStatusTitle, "Channels:"})
+	list = append(list, channelList...)
+
+	s.out.List(list, false)
+	return nil
 }
 
 // List writes a list of entities of type entityType to the Output interface.
@@ -834,10 +903,17 @@ func (s *Slk) msg(m *slack.Message, newSection, notify, isNew bool) {
 		entity = user
 	}
 
+	if s.active == nil {
+		s.Switch(entity)
+	}
+
+	active := entity.Is(s.active)
 	if isNew {
 		entity.incrementUnread()
 		entity.setLatest(m.Timestamp)
-		s.markRead <- entity
+		if active {
+			s.markRead <- entity
+		}
 	}
 
 	username := s.user(m.User).Name()
@@ -867,6 +943,10 @@ func (s *Slk) msg(m *slack.Message, newSection, notify, isNew bool) {
 				}
 			}
 		}
+	}
+
+	if !active {
+		return
 	}
 
 	s.out.Msg(
