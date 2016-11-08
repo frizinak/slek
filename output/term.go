@@ -472,9 +472,9 @@ func (t *Term) Clear() {
 // If submit == true the contents will be send to the input channel.
 func (t *Term) SetInput(str string, posX int, posY int, submit bool) {
 	t.gQueue <- func(g *gocui.Gui) error {
-		v, _ := g.View(viewInput)
-		if v == nil {
-			return nil
+		v, err := g.View(viewInput)
+		if err != nil {
+			return err
 		}
 
 		v.Clear()
