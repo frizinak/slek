@@ -127,6 +127,10 @@ func (s *slek) normalCommand(cmd string, args []string) bool {
 	case "all-users", "au":
 		s.c.List(slk.TypeUser, false)
 		return true
+
+	case "unread", "ur":
+		s.c.ListUnread()
+		return true
 	}
 	return false
 }
@@ -231,16 +235,6 @@ func (s *slek) run() error {
 			return
 		}
 		s.t.SetUsername(s.c.Username())
-
-		s.t.Notice("Fetching history...")
-		for _, e := range s.c.Joined() {
-			s.c.Unread(e)
-		}
-
-		for _, e := range s.c.IMs() {
-			s.c.Unread(e)
-		}
-
 		slkErr <- s.c.Run()
 	}()
 
@@ -275,6 +269,8 @@ func (s *slek) run() error {
 			if e == nil {
 				continue
 			}
+
+			s.c.Switch(e)
 
 			s.t.SetInput(
 				fmt.Sprintf("%s%s ", string(cmd[0]), e.Name()),
