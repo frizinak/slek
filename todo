@@ -57,3 +57,4 @@
            those can be fixed by sending separate runes to output.editor.
 [x] h:     fix filepath completion and upload on windows, also fuzzy panics.
 [ ] m:     history and other message fetchers should render reactions, comments, ...
+[ ] l:     don't wait for the actual mark request to resetUnread().
