@@ -123,15 +123,12 @@ func (t *format) wrap(str string, len uint) string {
 }
 
 func (t *format) Info(msg string) string {
-	t.lastPrefix = nil
 	return fmt.Sprintf("%s %s %s", colorBgGreen, msg, colorReset)
 }
 func (t *format) Notice(msg string) string {
-	t.lastPrefix = nil
 	return fmt.Sprintf("%s %s %s", colorBgYellow, msg, colorReset)
 }
 func (t *format) Warn(msg string) string {
-	t.lastPrefix = nil
 	return fmt.Sprintf("%s %s %s", colorBgRed, msg, colorReset)
 }
 
@@ -242,14 +239,14 @@ func (t *format) Msg(
 			ts.Format("02/01 15:04:05"),
 		)
 
-		t.lastPrefix = &msgPrefix{channel, from, ts}
-		return fmt.Sprintf(
+		msg = fmt.Sprintf(
 			"%s\n%s",
 			prefix,
 			msg,
 		)
 	}
 
+	t.lastPrefix = &msgPrefix{channel, from, ts}
 	return msg
 }
 
