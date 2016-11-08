@@ -455,6 +455,24 @@ func (s *Slk) Fuzzy(entityType EntityType, query string) []Entity {
 	return fuzzySearch(query, lookup)
 }
 
+// NextUnread returns a random entity (ims first) with unread messages.
+func (s *Slk) NextUnread() (Entity, error) {
+
+	for i := range s.users {
+		if !s.users[i].Is(s.active) && s.users[i].UnreadCount() != 0 {
+			return s.users[i], nil
+		}
+	}
+
+	for i := range s.channels {
+		if !s.channels[i].Is(s.active) && s.channels[i].UnreadCount() != 0 {
+			return s.channels[i], nil
+		}
+	}
+
+	return nil, errors.New("No channel or user with unread messages")
+}
+
 // ListUnread writes a list of entities with unread messages to the Output.
 func (s *Slk) ListUnread() error {
 	s.RLock()

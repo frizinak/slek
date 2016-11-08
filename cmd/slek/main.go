@@ -42,10 +42,16 @@ var (
 		{slk.ListItemStatusNone, "#room !path <comment> : upload file to #room"},
 
 		{slk.ListItemStatusTitle, "Listings"},
+		{slk.ListItemStatusNone, "unread | ur      : list rooms with unread messages"},
 		{slk.ListItemStatusNone, "users | u        : list online users"},
 		{slk.ListItemStatusNone, "all-users | au   : list all users"},
 		{slk.ListItemStatusNone, "channels | c     : list joined channels"},
 		{slk.ListItemStatusNone, "all-channels | ac: list all channels"},
+
+		{slk.ListItemStatusTitle, "Keybinds"},
+		{slk.ListItemStatusNone, "<C-q>: quit"},
+		{slk.ListItemStatusNone, "<C-e>: spawn editor command"},
+		{slk.ListItemStatusNone, "<C-u>: go to random room with unread messages"},
 	}
 )
 
@@ -249,6 +255,17 @@ func (s *slek) run() error {
 
 	s.t.BindKey(gocui.KeyCtrlE, func() error {
 		s.editor(s.t.Input())
+		return nil
+	})
+
+	s.t.BindKey(gocui.KeyCtrlU, func() error {
+		e, err := s.c.NextUnread()
+		if err != nil {
+			s.t.Notice(err.Error())
+			return nil
+		}
+
+		s.c.Switch(e)
 		return nil
 	})
 
