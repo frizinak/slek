@@ -538,8 +538,8 @@ func (t *Term) setActive(which string) {
 func (t *Term) submit() {
 	t.gQueue <- func(g *gocui.Gui) error {
 		v, _ := g.View(viewInput)
-		t.SetInput("", -1, -1, false)
 		t.input <- v.Buffer()
+		t.SetInput("", -1, -1, false)
 		return nil
 	}
 }
