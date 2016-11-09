@@ -644,20 +644,11 @@ func (s *Slk) Run() error {
 		return errors.New("Forgot to call Init()?")
 	}
 
-	go func() {
-		// TODO Quit should also quit this loop.
-		for {
-			time.Sleep(time.Minute)
-			// s.updateUsers(nil)
-			// s.updateIMs(nil)
-			// Still required for channel.members
-			s.updateChannels(nil, nil)
-		}
-	}()
-
 	markReadEntities := make(map[EntityType]map[string]Entity, 2)
 
 	markTimeout := time.After(time.Second * 5)
+	updateTimeout := time.After(time.Minute)
+
 	for {
 		select {
 		case err := <-s.quit:
@@ -689,6 +680,9 @@ func (s *Slk) Run() error {
 			}
 
 			markTimeout = time.After(time.Second * 5)
+		case <-updateTimeout:
+			s.updateChannels(nil, nil)
+			updateTimeout = time.After(time.Minute)
 		}
 	}
 }
