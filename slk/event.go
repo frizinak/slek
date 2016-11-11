@@ -69,6 +69,25 @@ func (s *Slk) handleEvent(event slack.RTMEvent) error {
 			time.Second*4,
 		)
 	case *slack.MessageEvent:
+		switch d.SubType {
+		case "channel_join":
+			fallthrough
+		case "group_join":
+			ch := s.channel(d.Channel)
+			ch.members = append(ch.members, d.User)
+
+		case "channel_leave":
+			fallthrough
+		case "group_leave":
+			ch := s.channel(d.Channel)
+			for i := range ch.members {
+				if ch.members[i] == d.User {
+					ch.members = append(ch.members[:i], ch.members[i+1:]...)
+					break
+				}
+			}
+		}
+
 		m := slack.Message(*d)
 		s.msg(&m, false, true, true)
 

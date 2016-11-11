@@ -125,6 +125,10 @@ func slackChannelToChannel(c *slack.Channel, original *channel) *channel {
 		},
 	}
 
+	if ch.members == nil {
+		ch.members = []string{}
+	}
+
 	if c.Latest != nil {
 		ch.latestTs = c.Latest.Timestamp
 	}
@@ -151,6 +155,10 @@ func slackGroupToChannel(g *slack.Group, original *channel) *channel {
 			lastReadTs: g.LastRead,
 			unread:     g.UnreadCount,
 		},
+	}
+
+	if ch.members == nil {
+		ch.members = []string{}
 	}
 
 	if g.Latest != nil {

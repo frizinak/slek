@@ -647,7 +647,6 @@ func (s *Slk) Run() error {
 	markReadEntities := make(map[EntityType]map[string]Entity, 2)
 
 	markTimeout := time.After(time.Second * 5)
-	updateTimeout := time.After(time.Minute)
 
 	for {
 		select {
@@ -680,9 +679,6 @@ func (s *Slk) Run() error {
 			}
 
 			markTimeout = time.After(time.Second * 5)
-		case <-updateTimeout:
-			s.updateChannels(nil, nil)
-			updateTimeout = time.After(time.Minute)
 		}
 	}
 }
