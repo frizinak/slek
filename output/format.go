@@ -2,7 +2,6 @@ package output
 
 import (
 	"fmt"
-	"math"
 	"os"
 	"regexp"
 	"strconv"
@@ -216,12 +215,11 @@ func (t *format) Msg(
 	}
 
 	msg = strings.Trim(msg, "\n")
-
 	if section ||
 		t.lastPrefix == nil ||
 		t.lastPrefix.channel != channel ||
 		t.lastPrefix.from != from ||
-		math.Abs(ts.Sub(t.lastPrefix.ts).Seconds()) > float64(time.Minute*5) {
+		ts.Sub(t.lastPrefix.ts) > time.Minute*15 {
 
 		prefix := ""
 		header := fmt.Sprintf(
