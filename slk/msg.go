@@ -101,7 +101,7 @@ func (s *Slk) msg(m *slack.Message, newSection, notify, isNew bool) {
 			s.parseAttachments(m.Attachments)...)...,
 	)
 
-	if notify {
+	if notify && username != s.username {
 		if im {
 			if username != s.username {
 				s.out.Notify(entity.QualifiedName(), username, text, false)

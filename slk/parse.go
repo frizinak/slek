@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	reEntity     = regexp.MustCompile(`<(#|@)([^>]+)>`)
-	reEntityRepl = regexp.MustCompile(`<(#|@)([^>|]+)(?:|[^>]+)?>`)
+	reEntity     = regexp.MustCompile(`<(#|@|!)([^>]+)>`)
+	reEntityRepl = regexp.MustCompile(`<(#|@|!)([^>|]+)(?:|[^>]+)?>`)
 )
 
 func ts(ts string) (t time.Time) {
@@ -45,12 +45,22 @@ func (s *Slk) parseTextIncoming(texts ...string) (parsed string, mentions []stri
 					return str
 				}
 
-				var entity Entity
+				var entity Entity = nilUser
 				switch m[1] {
 				case "@":
 					entity = s.user(m[2])
 				case "#":
 					entity = s.channel(m[2])
+				case "!":
+					switch m[2] {
+					case "everyone":
+						fallthrough
+					case "channel":
+						fallthrough
+					case "here":
+						mentions = append(mentions, s.username)
+						return "@" + m[2]
+					}
 				}
 
 				if !entity.IsNil() {
