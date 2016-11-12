@@ -58,5 +58,5 @@
 [x] h:     fix filepath completion and upload on windows, also fuzzy panics.
 [ ] m:     history and other message fetchers should render reactions, comments, ...
 [x] l:     don't wait for the actual mark request to resetUnread().
-[ ] l:     # and @ should autocomplete to current channel / user
-[ ] h:     handle message subtypes https://api.slack.com/events/message and drop updateChannels polling.
+[x] l:     # and @ should autocomplete to current channel / user
+[x] h:     handle message subtypes https://api.slack.com/events/message and drop updateChannels polling.

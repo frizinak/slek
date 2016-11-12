@@ -272,6 +272,16 @@ func (s *Slk) Switch(e Entity) error {
 	return nil
 }
 
+// Active returns the active entity.
+func (s *Slk) Active() (Entity, error) {
+	active := s.active
+	if active == nil {
+		return nil, errors.New("No active channel")
+	}
+
+	return active, nil
+}
+
 // IMs returns a list of users you have intiated an IM channel with.
 func (s *Slk) IMs() []Entity {
 	users := make([]Entity, 0)

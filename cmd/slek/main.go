@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"os/user"
@@ -294,6 +293,19 @@ func (s *slek) run() error {
 				continue
 			}
 
+			// cmd == cmd[0] == a valid entity prefix.
+			if len(cmd) == 1 && len(args) == 0 {
+				if active, err := s.c.Active(); err == nil {
+					s.t.SetInput(
+						active.QualifiedName()+" ",
+						-1,
+						-1,
+						false,
+					)
+					continue
+				}
+			}
+
 			e := s.fuzzy(eType, cmd[1:], args)
 			if e == nil {
 				continue
@@ -302,7 +314,7 @@ func (s *slek) run() error {
 			s.c.Switch(e)
 
 			s.t.SetInput(
-				fmt.Sprintf("%s%s ", string(cmd[0]), e.Name()),
+				e.QualifiedName()+" ",
 				-1,
 				-1,
 				false,
