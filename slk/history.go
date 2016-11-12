@@ -14,13 +14,16 @@ func (s *Slk) history(
 	newSection bool,
 ) (latest string, done bool, err error) {
 	var hist *slack.History
-	tp := e.Type()
-	switch {
-	case tp == TypeChannel && e.(*channel).isChannel:
-		hist, err = s.channelHistory(e.ID(), p)
-	case tp == TypeChannel:
+
+	switch e.Type() {
+	case TypeChannel:
+		if e.(*channel).isChannel {
+			hist, err = s.channelHistory(e.ID(), p)
+			break
+		}
+
 		hist, err = s.groupHistory(e.ID(), p)
-	case tp == TypeUser:
+	case TypeUser:
 		hist, err = s.imHistory(e.ID(), p)
 	default:
 		err = fmt.Errorf("Can not post message to type %s", e.Type())
