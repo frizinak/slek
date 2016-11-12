@@ -30,6 +30,11 @@ fakeabout:
 	echo 'Development build' > "$(ASSET)/assets/about"
 	echo 'download release here: https://github.com/frizinak/slek/releases' \
 		>> $(ASSET)/assets/about
+	echo '===========' >> $(ASSET)/assets/about
+	cat assets/about.tpl.txt | \
+		sed 's/<tag>/?.?.?/' | \
+		sed "/<snail-license>/{"$$'\n'"s/<snail-license>//g"$$'\n'"r assets/snail.license"$$'\n'"}" \
+		>> "$(ASSET)/assets/about"
 
 about:
 	cat assets/about.tpl.txt | \
