@@ -4,9 +4,6 @@
 [submodule "vendor/github.com/renstrom/fuzzysearch"]
 	path = vendor/github.com/renstrom/fuzzysearch
 	url = https://github.com/renstrom/fuzzysearch
-[submodule "vendor/github.com/nsf/termbox-go"]
-	path = vendor/github.com/nsf/termbox-go
-	url = https://github.com/nsf/termbox-go
 [submodule "vendor/github.com/mattn/go-runewidth"]
 	path = vendor/github.com/mattn/go-runewidth
 	url = https://github.com/mattn/go-runewidth
@@ -22,3 +19,6 @@
 [submodule "vendor/github.com/frizinak/gocui"]
 	path = vendor/github.com/frizinak/gocui
 	url = https://github.com/frizinak/gocui
+[submodule "vendor/github.com/nsf/termbox-go"]
+	path = vendor/github.com/nsf/termbox-go
+	url = https://github.com/frizinak/termbox-go
