@@ -44,6 +44,10 @@ type Slk struct {
 func NewSlk(token, timeFormat string, output Output) *Slk {
 	var rw sync.RWMutex
 
+	// TODO overriding a package global here!
+	// @see https://github.com/nlopes/slack/issues/27
+	slack.HTTPClient.Timeout = time.Second * 5
+
 	return &Slk{
 		output,
 		"",
