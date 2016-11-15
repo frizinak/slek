@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/nlopes/slack"
@@ -20,8 +19,6 @@ type Slk struct {
 	out        Output
 	username   string
 	timeFormat string
-
-	*sync.RWMutex
 
 	active   Entity
 	markRead chan Entity
@@ -42,8 +39,6 @@ type Slk struct {
 
 // NewSlk returns a new Slk 'engine'.
 func NewSlk(token, timeFormat string, output Output) *Slk {
-	var rw sync.RWMutex
-
 	// TODO overriding a package global here!
 	// @see https://github.com/nlopes/slack/issues/27
 	slack.HTTPClient.Timeout = time.Second * 5
@@ -52,7 +47,6 @@ func NewSlk(token, timeFormat string, output Output) *Slk {
 		output,
 		"",
 		timeFormat,
-		&rw,
 		nil,
 		make(chan Entity, 1),
 		make(chan error, 0),
@@ -453,9 +447,6 @@ func (s *Slk) Pins(e Entity) error {
 // Fuzzy returns a list of entities of type entityType whose names fuzzy match
 // the given query.
 func (s *Slk) Fuzzy(entityType EntityType, query string) []Entity {
-	s.RLock()
-	defer s.RUnlock()
-
 	lookup := map[string]Entity{}
 
 	switch entityType {
@@ -476,7 +467,6 @@ func (s *Slk) Fuzzy(entityType EntityType, query string) []Entity {
 
 // NextUnread returns a random entity (ims first) with unread messages.
 func (s *Slk) NextUnread() (Entity, error) {
-
 	for i := range s.users {
 		if !s.users[i].Is(s.active) && s.users[i].UnreadCount() != 0 {
 			return s.users[i], nil
@@ -494,9 +484,6 @@ func (s *Slk) NextUnread() (Entity, error) {
 
 // ListUnread writes a list of entities with unread messages to the Output.
 func (s *Slk) ListUnread() error {
-	s.RLock()
-	defer s.RUnlock()
-
 	userList := make(ListItems, 0)
 	channelList := make(ListItems, 0)
 
@@ -547,9 +534,6 @@ func (s *Slk) ListUnread() error {
 
 // List writes a list of entities of type entityType to the Output interface.
 func (s *Slk) List(entityType EntityType, relevantOnly bool) error {
-	s.RLock()
-	defer s.RUnlock()
-
 	var items ListItems
 	var title string
 

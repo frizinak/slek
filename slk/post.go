@@ -19,9 +19,7 @@ func (s *Slk) post(e Entity, msg string) error {
 }
 
 func (s *Slk) postChannel(ch, msg string) error {
-	s.RLock()
 	channel, ok := s.channels[ch]
-	s.RUnlock()
 
 	if !ok {
 		return errors.New("No such channel")
@@ -38,9 +36,7 @@ func (s *Slk) postChannel(ch, msg string) error {
 }
 
 func (s *Slk) postIM(name string, msg string) error {
-	s.RLock()
 	user, ok := s.users[name]
-	s.RUnlock()
 
 	if !ok {
 		return errors.New("No such user")

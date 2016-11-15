@@ -20,8 +20,6 @@ func (s *Slk) updateUsers(users []slack.User) error {
 		usersByName[users[i].Name] = u
 	}
 
-	s.Lock()
-	defer s.Unlock()
 	s.users = _users
 	s.usersByName = usersByName
 
@@ -68,8 +66,6 @@ func (s *Slk) updateChannels(
 		channelsByName[_channels[i].Name()] = _channels[i]
 	}
 
-	s.Lock()
-	defer s.Unlock()
 	s.channels = _channels
 	s.channelsByName = channelsByName
 
@@ -100,8 +96,6 @@ func (s *Slk) updateIMs(ims []slack.IM) error {
 		}
 	}
 
-	s.Lock()
-	defer s.Unlock()
 	s.ims = _ims
 	s.imsByUser = _imsByUser
 
@@ -109,8 +103,6 @@ func (s *Slk) updateIMs(ims []slack.IM) error {
 }
 
 func (s *Slk) user(id string) *user {
-	s.RLock()
-	defer s.RUnlock()
 	if u, ok := s.users[id]; ok {
 		return u
 	}
@@ -119,8 +111,6 @@ func (s *Slk) user(id string) *user {
 }
 
 func (s *Slk) userByName(name string) *user {
-	s.RLock()
-	defer s.RUnlock()
 	if u, ok := s.usersByName[name]; ok {
 		return u
 	}
@@ -129,8 +119,6 @@ func (s *Slk) userByName(name string) *user {
 }
 
 func (s *Slk) channel(id string) *channel {
-	s.RLock()
-	defer s.RUnlock()
 	if ch, ok := s.channels[id]; ok {
 		return ch
 	}
@@ -139,8 +127,6 @@ func (s *Slk) channel(id string) *channel {
 }
 
 func (s *Slk) channelByName(name string) *channel {
-	s.RLock()
-	defer s.RUnlock()
 	if ch, ok := s.channelsByName[name]; ok {
 		return ch
 	}
@@ -149,8 +135,6 @@ func (s *Slk) channelByName(name string) *channel {
 }
 
 func (s *Slk) im(id string) *slack.IM {
-	s.RLock()
-	defer s.RUnlock()
 	if im, ok := s.ims[id]; ok {
 		return im
 	}
@@ -159,8 +143,6 @@ func (s *Slk) im(id string) *slack.IM {
 }
 
 func (s *Slk) imByUser(id string) *slack.IM {
-	s.RLock()
-	defer s.RUnlock()
 	if im, ok := s.imsByUser[id]; ok {
 		return im
 	}
