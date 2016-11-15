@@ -266,13 +266,17 @@ func (s *slek) run() error {
 	})
 
 	s.t.BindKey(gocui.KeyCtrlU, func() error {
-		e, err := s.c.NextUnread()
-		if err != nil {
-			s.t.Notice(err.Error())
-			return nil
-		}
+		// gocui can't handle key events that spawn > 20 userEvents
+		// TODO test thread safety.
+		go func() {
+			e, err := s.c.NextUnread()
+			if err != nil {
+				s.t.Notice(err.Error())
+				return
+			}
 
-		s.c.Switch(e)
+			s.c.Switch(e)
+		}()
 		return nil
 	})
 

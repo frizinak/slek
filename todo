@@ -61,3 +61,4 @@
 [x] l:     # and @ should autocomplete to current channel / user
 [x] h:     handle message subtypes https://api.slack.com/events/message and drop updateChannels polling.
 [ ] l:     handle @user-group (https://<team>.slack.com/admin#user_groups)
+[ ] h:     check thread safety of slk/*
