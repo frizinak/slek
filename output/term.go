@@ -464,6 +464,7 @@ func (t *Term) Clear() {
 		}
 
 		v.Clear()
+		v.SetOrigin(0, 0)
 		return nil
 	}
 }
