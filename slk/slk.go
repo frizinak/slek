@@ -265,6 +265,17 @@ func (s *Slk) Switch(e Entity) error {
 		return err
 	}
 
+	if e.Type() == TypeChannel && !e.IsActive() {
+		s.out.Info(
+			fmt.Sprintf(
+				"%s [not a member, join to receive live messages]",
+				e.QualifiedName(),
+			),
+		)
+
+		return nil
+	}
+
 	s.out.Info(e.QualifiedName())
 
 	return nil
