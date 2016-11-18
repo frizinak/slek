@@ -54,10 +54,11 @@ type Term struct {
 	resetEventBox   *time.Time
 	eventBoxCache   string
 
-	boxWidth    uint
-	infoWidth   uint
-	typingWidth uint
-	views       []*view
+	//boxWidth    uint
+	//infoWidth   uint
+	//typingWidth uint
+	dimensions map[string]uint
+	views      []*view
 }
 
 // NewTerm returns a Term and an input channel which will receive the current
@@ -85,6 +86,7 @@ func NewTerm(
 		notifyChan:          make(chan *notification, 1),
 		notificationLimit:   notificationLimit,
 		notificationTimeout: notificationTimeout,
+		dimensions:          map[string]uint{},
 		views: []*view{
 			{viewEvent, false},
 			{viewInfo, true},
@@ -560,7 +562,7 @@ func (t *Term) update() {
 	}
 }
 
-func (t *Term) text(which, msg string, width uint, clear bool) {
+func (t *Term) text(which, msg string, clear bool) {
 	t.gQueue <- func(g *gocui.Gui) error {
 		v, _ := g.View(which)
 		if v != nil {
@@ -568,7 +570,7 @@ func (t *Term) text(which, msg string, width uint, clear bool) {
 				v.Clear()
 			}
 
-			if width != 0 {
+			if width, ok := t.dimensions[which]; ok {
 				msg = t.wrap(msg, width)
 			}
 
@@ -584,11 +586,11 @@ func (t *Term) text(which, msg string, width uint, clear bool) {
 }
 
 func (t *Term) boxText(msg string) {
-	t.text(viewChat, msg, t.boxWidth, false)
+	t.text(viewChat, msg, false)
 }
 
 func (t *Term) infoText(msg string) {
-	t.text(viewInfo, msg, t.infoWidth, true)
+	t.text(viewInfo, msg, true)
 }
 
 func (t *Term) eventText(msg string, timeout time.Duration) {
@@ -603,7 +605,7 @@ func (t *Term) eventText(msg string, timeout time.Duration) {
 		}
 	}
 
-	t.text(viewEvent, msg, 0, true)
+	t.text(viewEvent, msg, true)
 }
 
 func (t *Term) typingText(msg string, timeout time.Duration) {
@@ -614,39 +616,36 @@ func (t *Term) typingText(msg string, timeout time.Duration) {
 		t.clearTypingBox = &at
 	}
 
-	t.text(viewTyping, msg, t.typingWidth, true)
+	t.text(viewTyping, msg, true)
 }
 
 func (t *Term) layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
 	maxX--
 
-	boxW := maxX
-	t.boxWidth = uint(boxW - 2)
-	t.typingWidth = t.boxWidth
-
-	if v, err := g.SetView(viewChat, 0, 3, boxW, maxY-6); err != nil {
+	t.dimensions[viewChat] = uint(maxX - 2)
+	if v, err := g.SetView(viewChat, 0, 3, maxX, maxY-6); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
 
 		v.Frame = false
 		v.Autoscroll = true
-		v.Wrap = true
+		v.Wrap = false
 	}
 
-	t.infoWidth = t.boxWidth - 20
-	if v, err := g.SetView(viewInfo, 10, 3, boxW-10, maxY-3); err != nil {
+	t.dimensions[viewInfo] = t.dimensions[viewChat] - 20
+	if v, err := g.SetView(viewInfo, 10, 4, maxX-10, maxY-3); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
 
 		v.Frame = true
 		v.Autoscroll = false
-		v.Wrap = true
+		v.Wrap = false
 	}
 
-	if v, err := g.SetView(viewInput, 0, maxY-6, boxW, maxY-3); err != nil {
+	if v, err := g.SetView(viewInput, 0, maxY-5, maxX, maxY-2); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
@@ -657,17 +656,19 @@ func (t *Term) layout(g *gocui.Gui) error {
 		v.Editor = gocui.EditorFunc(editor)
 	}
 
-	if v, err := g.SetView(viewEvent, 2, 0, maxX-1, 3); err != nil {
+	t.dimensions[viewEvent] = t.dimensions[viewChat]
+	if v, err := g.SetView(viewEvent, 0, 0, maxX, 4); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
 
 		v.Frame = false
 		v.Wrap = false
-		v.Autoscroll = true
+		v.Autoscroll = false
 	}
 
-	if v, err := g.SetView(viewTyping, 0, maxY-3, boxW, maxY); err != nil {
+	t.dimensions[viewTyping] = t.dimensions[viewChat]
+	if v, err := g.SetView(viewTyping, 0, maxY-2, maxX, maxY+1); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
