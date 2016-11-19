@@ -625,14 +625,14 @@ func (t *Term) layout(g *gocui.Gui) error {
 	maxX--
 
 	t.dimensions[viewChat] = uint(maxX - 2)
-	if v, err := g.SetView(viewChat, 0, 3, maxX, maxY-6); err != nil {
+	if v, err := g.SetView(viewChat, 0, 3, maxX, maxY-5); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
 
 		v.Frame = false
 		v.Autoscroll = true
-		v.Wrap = false
+		v.Wrap = true
 	}
 
 	t.dimensions[viewInfo] = t.dimensions[viewChat] - 20
@@ -643,7 +643,7 @@ func (t *Term) layout(g *gocui.Gui) error {
 
 		v.Frame = true
 		v.Autoscroll = false
-		v.Wrap = false
+		v.Wrap = true
 	}
 
 	if v, err := g.SetView(viewInput, 0, maxY-5, maxX, maxY-2); err != nil {
