@@ -118,15 +118,20 @@ func (s *Slk) SetPresence(presence UserPresence) error {
 		real = "auto"
 	}
 
-	if presence != s.presence {
-		if err := s.c.SetUserPresence(real); err != nil {
+	if err := s.c.SetUserPresence(real); err != nil {
+		s.out.Warn("Could not update presence")
+		return err
+	}
+
+	if presence == UserPresenceActive {
+		if err := s.c.SetUserAsActive(); err != nil {
 			s.out.Warn("Could not update presence")
 			return err
 		}
 	}
 
 	s.presence = presence
-	s.out.Info(fmt.Sprintf("Updated presence to %s", presence))
+	s.out.Notice(fmt.Sprintf("Updated presence to %s", presence))
 	return nil
 }
 

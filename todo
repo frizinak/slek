@@ -13,7 +13,7 @@
 [x] l:     ratelimit notifications
 [ ] h:     fix editor: crashes hard on multiple newlines (paste)
 [-] h:     fix editor: arrow down / right should not 'create' newlines (right arrow fixed, newlines: alt+enter?)
-[ ] l:     send messages using the rtm api (keep webapi post as fallback?)
+[!] l:     send messages using the rtm api (keep webapi post as fallback?). EDIT: nope
 [x] l:     user-is-typing box (or generic feedback box, repurposing info for users and channel listings) + timeout
 [x] l:     update users / channels status on rtm events instead of webapi every n seconds
 [x] l:     godoc
@@ -62,3 +62,6 @@
 [x] h:     handle message subtypes https://api.slack.com/events/message and drop updateChannels polling.
 [ ] l:     handle @user-group (https://<team>.slack.com/admin#user_groups)
 [ ] h:     check thread safety of slk/*
+[ ] l:     send typing events, emit key press events from the editor to Term.go?
+           validate in slek/main.go and trigger slk.Typing(entity)
+           3 second timeout: https://api.slack.com/rtm
