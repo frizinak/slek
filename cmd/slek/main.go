@@ -24,33 +24,43 @@ var (
 		{slk.ListItemStatusTitle, "HELP (#room = @user #group or #channel)"},
 
 		{slk.ListItemStatusTitle, "General"},
-		{slk.ListItemStatusNone, "quit             : quit slek"},
-		{slk.ListItemStatusNone, "exit             : quit slek"},
-		{slk.ListItemStatusNone, "about            : about slek"},
-		{slk.ListItemStatusNone, "clear            : clear the chat screen"},
+		{slk.ListItemStatusNone, "quit : quit slek"},
+		{slk.ListItemStatusNone, "exit : quit slek"},
+		{slk.ListItemStatusNone, "about: about slek"},
+		{slk.ListItemStatusNone, "clear: clear the chat screen"},
+		{slk.ListItemStatusNone, ""},
+
+		{slk.ListItemStatusTitle, "Presence"},
+		{slk.ListItemStatusNone, "active: set yourself to active"},
+		{slk.ListItemStatusNone, "away  : set yourself to away"},
+		{slk.ListItemStatusNone, ""},
 
 		{slk.ListItemStatusTitle, "Messages"},
 		{slk.ListItemStatusNone, "#room <msg>: send <msg>"},
+		{slk.ListItemStatusNone, ""},
 
 		{slk.ListItemStatusTitle, "Rooms"},
 		{slk.ListItemStatusNone, "#room /h <n>          : get history (<n> items)"},
-		{slk.ListItemStatusNone, "#room /u | /users:    : list online users in #room"},
+		{slk.ListItemStatusNone, "#room /u  | /users:   : list online users in #room"},
 		{slk.ListItemStatusNone, "#room /au | /all-users: list all users in #room"},
-		{slk.ListItemStatusNone, "#room /p | /pins      : list pins of #room"},
-		{slk.ListItemStatusNone, "#room /f | /files     : list files of #room"},
+		{slk.ListItemStatusNone, "#room /p  | /pins     : list pins of #room"},
+		{slk.ListItemStatusNone, "#room /f  | /files    : list files of #room"},
 		{slk.ListItemStatusNone, "#room !path <comment> : upload file to #room"},
+		{slk.ListItemStatusNone, ""},
 
 		{slk.ListItemStatusTitle, "Listings"},
-		{slk.ListItemStatusNone, "unread | ur      : list rooms with unread messages"},
-		{slk.ListItemStatusNone, "users | u        : list online users"},
-		{slk.ListItemStatusNone, "all-users | au   : list all users"},
-		{slk.ListItemStatusNone, "channels | c     : list joined channels"},
+		{slk.ListItemStatusNone, "unread       | ur: list rooms with unread messages"},
+		{slk.ListItemStatusNone, "users        | u : list online users"},
+		{slk.ListItemStatusNone, "all-users    | au: list all users"},
+		{slk.ListItemStatusNone, "channels     | c : list joined channels"},
 		{slk.ListItemStatusNone, "all-channels | ac: list all channels"},
+		{slk.ListItemStatusNone, ""},
 
 		{slk.ListItemStatusTitle, "Keybinds"},
 		{slk.ListItemStatusNone, "<C-q>: quit"},
 		{slk.ListItemStatusNone, "<C-e>: spawn editor command"},
 		{slk.ListItemStatusNone, "<C-u>: go to random room with unread messages"},
+		{slk.ListItemStatusNone, ""},
 	}
 )
 
@@ -147,6 +157,13 @@ func (s *slek) normalCommand(cmd string, args []string) bool {
 
 	case "unread", "ur":
 		s.c.ListUnread()
+		return true
+
+	case "active":
+		s.c.SetPresence(slk.UserPresenceActive)
+		return true
+	case "away":
+		s.c.SetPresence(slk.UserPresenceAway)
 		return true
 	}
 	return false

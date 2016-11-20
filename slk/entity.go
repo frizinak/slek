@@ -3,14 +3,20 @@ package slk
 import "github.com/nlopes/slack"
 
 const (
-	userPresenceActive = "active"
-	nilID              = "-"
-	nilName            = "UNKNOWN"
+	// UserPresenceActive represents the active presence.
+	UserPresenceActive UserPresence = "active"
+	// UserPresenceAway represents the away presence.
+	UserPresenceAway UserPresence = "away"
 
 	// TypeChannel identifies the channel-type
 	TypeChannel EntityType = "channel"
 	// TypeUser identifies the user-type
 	TypeUser EntityType = "user"
+)
+
+const (
+	nilID   = "-"
+	nilName = "UNKNOWN"
 )
 
 var (
@@ -36,6 +42,9 @@ func init() {
 	nilIM.ID = "-" // :(
 }
 
+// UserPresence represent a slack userpresence string
+type UserPresence string
+
 // EntityType represents a slack entity-type (i.e.: channel, user, ...)
 type EntityType string
 
@@ -47,6 +56,7 @@ type Entity interface {
 	Type() EntityType
 	UnreadCount() int
 	IsActive() bool
+	IsAway() bool
 	IsNil() bool
 	Is(Entity) bool
 
@@ -88,6 +98,7 @@ func (c *channel) Name() string          { return c.name }
 func (c *channel) QualifiedName() string { return "#" + c.name }
 func (c *channel) Type() EntityType      { return TypeChannel }
 func (c *channel) IsActive() bool        { return c.isMember }
+func (c *channel) IsAway() bool          { return false }
 func (c *channel) IsNil() bool           { return c.id == nilID }
 func (c *channel) Is(entity Entity) bool {
 	return entity != nil &&
@@ -103,7 +114,8 @@ func (u *user) ID() string            { return u.User.ID }
 func (u *user) Name() string          { return u.User.Name }
 func (u *user) QualifiedName() string { return "@" + u.User.Name }
 func (u *user) Type() EntityType      { return TypeUser }
-func (u *user) IsActive() bool        { return u.Presence == userPresenceActive }
+func (u *user) IsActive() bool        { return u.Presence == string(UserPresenceActive) }
+func (u *user) IsAway() bool          { return u.Presence == string(UserPresenceAway) }
 func (u *user) IsNil() bool           { return u.User.ID == nilID }
 func (u *user) Is(entity Entity) bool {
 	return entity != nil &&

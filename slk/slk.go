@@ -20,9 +20,11 @@ type Slk struct {
 	username   string
 	timeFormat string
 
-	active   Entity
-	markRead chan Entity
-	quit     chan error
+	active       Entity
+	markRead     chan Entity
+	quit         chan error
+	presence     UserPresence
+	lastActivity time.Time
 
 	token string
 
@@ -50,6 +52,8 @@ func NewSlk(token, timeFormat string, output Output) *Slk {
 		nil,
 		make(chan Entity, 1),
 		make(chan error, 0),
+		UserPresenceActive,
+		time.Now(),
 		token,
 		slack.New(token),
 		nil,
@@ -105,8 +109,31 @@ func (s *Slk) Username() string {
 	return s.username
 }
 
+// SetPresence updates your presence.
+func (s *Slk) SetPresence(presence UserPresence) error {
+	s.lastActivity = time.Now()
+
+	real := string(presence)
+	if presence != UserPresenceAway {
+		real = "auto"
+	}
+
+	if presence != s.presence {
+		if err := s.c.SetUserPresence(real); err != nil {
+			s.out.Warn("Could not update presence")
+			return err
+		}
+	}
+
+	s.presence = presence
+	s.out.Info(fmt.Sprintf("Updated presence to %s", presence))
+	return nil
+}
+
 // Uploads lists the first api page of uploads of the given entity.
 func (s *Slk) Uploads(e Entity) error {
+	s.lastActivity = time.Now()
+
 	var id string
 	switch e.Type() {
 	case TypeUser:
@@ -152,6 +179,8 @@ func (s *Slk) Uploads(e Entity) error {
 
 // Upload a file to the given entity.
 func (s *Slk) Upload(e Entity, filepath, title, comment string) chan error {
+	s.lastActivity = time.Now()
+
 	ch := make(chan error, 1)
 
 	var id string
@@ -211,6 +240,8 @@ func (s *Slk) Upload(e Entity, filepath, title, comment string) chan error {
 
 // Invite a user to a channel or group.
 func (s *Slk) Invite(channel, user Entity) error {
+	s.lastActivity = time.Now()
+
 	if err := s.invite(channel, user); err != nil {
 		s.out.Warn(err.Error())
 		return err
@@ -222,6 +253,8 @@ func (s *Slk) Invite(channel, user Entity) error {
 
 // Join makes your user join the given channel or group.
 func (s *Slk) Join(e Entity) error {
+	s.lastActivity = time.Now()
+
 	if err := s.join(e); err != nil {
 		s.out.Warn(err.Error())
 		return err
@@ -233,6 +266,8 @@ func (s *Slk) Join(e Entity) error {
 
 // Leave makes your user leave the given channel or group.
 func (s *Slk) Leave(e Entity) error {
+	s.lastActivity = time.Now()
+
 	if err := s.leave(e); err != nil {
 		s.out.Warn(err.Error())
 		return err
@@ -256,6 +291,8 @@ func (s *Slk) Joined() []Entity {
 
 // Switch to the given entity and fetch unread history.
 func (s *Slk) Switch(e Entity) error {
+	s.lastActivity = time.Now()
+
 	if e.Is(s.active) {
 		return nil
 	}
@@ -306,6 +343,8 @@ func (s *Slk) IMs() []Entity {
 
 // Post a message to the given user, channel or group.
 func (s *Slk) Post(e Entity, msg string) error {
+	s.lastActivity = time.Now()
+
 	if err := s.post(e, msg); err != nil {
 		s.out.Warn(err.Error())
 		return err
@@ -317,6 +356,8 @@ func (s *Slk) Post(e Entity, msg string) error {
 // Unread writes all unread mesages of the given user, channel or group
 // to the Output interface and marks the last message as read.
 func (s *Slk) Unread(e Entity) error {
+	s.lastActivity = time.Now()
+
 	last := e.lastRead()
 	latest := e.latest()
 	fLast, _ := strconv.ParseFloat(last, 64)
@@ -359,6 +400,8 @@ func (s *Slk) Unread(e Entity) error {
 // but takes an amount of messages argument instead of looking up unread
 // messages.
 func (s *Slk) History(e Entity, amount int) error {
+	s.lastActivity = time.Now()
+
 	p := slack.NewHistoryParameters()
 	p.Count = amount
 	p.Inclusive = true
@@ -380,6 +423,8 @@ func (s *Slk) History(e Entity, amount int) error {
 // Pins writes the last 100 (?) pins of a channel or group to the
 // Output interface.
 func (s *Slk) Pins(e Entity) error {
+	s.lastActivity = time.Now()
+
 	var err error
 	var items []slack.Item
 
@@ -478,6 +523,8 @@ func (s *Slk) Fuzzy(entityType EntityType, query string) []Entity {
 
 // NextUnread returns a random entity (ims first) with unread messages.
 func (s *Slk) NextUnread() (Entity, error) {
+	s.lastActivity = time.Now()
+
 	for i := range s.users {
 		if !s.users[i].Is(s.active) && s.users[i].UnreadCount() != 0 {
 			return s.users[i], nil
@@ -548,45 +595,43 @@ func (s *Slk) List(entityType EntityType, relevantOnly bool) error {
 	var items ListItems
 	var title string
 
+	create := func(e Entity) *ListItem {
+		status := ListItemStatusGood
+		if e.IsAway() {
+			status = ListItemStatusBad
+		} else if !e.IsActive() {
+			if relevantOnly {
+				return nil
+			}
+
+			status = ListItemStatusNormal
+		}
+
+		txt := e.Name()
+		if ur := e.UnreadCount(); ur != 0 {
+			txt = fmt.Sprintf("%-18s [%d]", txt, ur)
+		}
+
+		return &ListItem{status, txt}
+	}
+
 	switch entityType {
 	case TypeChannel:
 		title = "Channels:"
 		items = make(ListItems, 0, len(s.channels))
 		for _, c := range s.channels {
-			status := ListItemStatusGood
-			if !c.IsActive() {
-				if relevantOnly {
-					continue
-				}
-				status = ListItemStatusNormal
+			if item := create(c); item != nil {
+				items = append(items, item)
 			}
-
-			txt := c.Name()
-			if ur := c.UnreadCount(); ur != 0 {
-				txt = fmt.Sprintf("%-18s [%d]", txt, ur)
-			}
-
-			items = append(items, &ListItem{status, txt})
 		}
 
 	case TypeUser:
 		title = "Users:"
 		items = make(ListItems, 0, len(s.users))
 		for _, u := range s.users {
-			status := ListItemStatusGood
-			if !u.IsActive() {
-				if relevantOnly {
-					continue
-				}
-				status = ListItemStatusNormal
+			if item := create(u); item != nil {
+				items = append(items, item)
 			}
-
-			txt := u.Name()
-			if ur := u.UnreadCount(); ur != 0 {
-				txt = fmt.Sprintf("%-18s [%d]", txt, ur)
-			}
-
-			items = append(items, &ListItem{status, txt})
 		}
 	}
 
@@ -656,6 +701,8 @@ func (s *Slk) Run() error {
 	markReadEntities := make(map[EntityType]map[string]Entity, 2)
 
 	markTimeout := time.After(time.Second * 5)
+	active := time.Minute * 5
+	activeTimeout := time.After(active)
 
 	for {
 		select {
@@ -675,6 +722,13 @@ func (s *Slk) Run() error {
 			}
 			markReadEntities[typ][e.ID()] = e
 			e.resetUnread()
+		case <-activeTimeout:
+			if s.presence == UserPresenceActive &&
+				s.lastActivity.Add(active).After(time.Now()) {
+				s.out.Debug("update user activity")
+				s.c.SetUserAsActive()
+			}
+			activeTimeout = time.After(active)
 
 		case <-markTimeout:
 		Outer:
