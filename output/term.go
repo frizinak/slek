@@ -22,6 +22,8 @@ const (
 
 type notification struct {
 	channel, from, text string
+	created             time.Time
+	sent                bool
 }
 
 type view struct {
@@ -121,22 +123,33 @@ func (t *Term) Init() (err error) {
 				return
 			}
 
-			for _, n := range ns {
+			for i, n := range ns {
+				if n.sent {
+					continue
+				}
+
 				t.Notify(n.channel, n.from, n.text, true)
+				// Empty from, channel and text fields.
+				ns[i] = &notification{sent: true, created: n.created}
 			}
 
-			ns = make(map[string]*notification, 0)
 			next = time.Now().Add(t.notificationLimit)
 		}
 
 		for {
 			select {
 			case n := <-t.notifyChan:
+				if last, ok := ns[n.channel]; ok &&
+					last.sent &&
+					n.created.Sub(last.created) < t.notificationLimit {
+					break
+				}
+
 				ns[n.channel] = n
 				if time.Now().After(next) {
 					do()
 				}
-			case <-time.After(t.notificationLimit):
+			case <-time.After(time.Second):
 				do()
 			}
 		}
@@ -378,7 +391,7 @@ func (t *Term) Quit() {
 
 func (t *Term) Notify(channel, from, text string, force bool) {
 	if !force {
-		t.notifyChan <- &notification{channel, from, text}
+		t.notifyChan <- &notification{channel, from, text, time.Now(), false}
 		return
 	}
 
