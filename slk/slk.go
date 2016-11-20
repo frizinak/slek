@@ -602,9 +602,7 @@ func (s *Slk) List(entityType EntityType, relevantOnly bool) error {
 
 	create := func(e Entity) *ListItem {
 		status := ListItemStatusGood
-		if e.IsAway() {
-			status = ListItemStatusBad
-		} else if !e.IsActive() {
+		if !e.IsActive() {
 			if relevantOnly {
 				return nil
 			}
